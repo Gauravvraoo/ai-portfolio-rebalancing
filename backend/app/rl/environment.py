@@ -5,6 +5,7 @@ from gymnasium import spaces
 import numpy as np
 from app.rl.constraints import Constraints
 from app.rl.data import ESG, WINDOW
+from app.services.execution import execute
 
 
 def reward_components(
@@ -28,7 +29,16 @@ def reward_components(
 class PortfolioEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, prices, dates, start, end, config, responsible=False):
+    def __init__(
+        self,
+        prices,
+        dates,
+        start,
+        end,
+        config,
+        responsible=False,
+        initial_capital=100000.0,
+    ):
         super().__init__()
         self.prices = np.asarray(prices, dtype=float).copy()
         self.dates = np.asarray(dates)
@@ -40,6 +50,9 @@ class PortfolioEnv(gym.Env):
             raise ValueError("Invalid market price matrix")
         if not WINDOW <= start < end < len(dates):
             raise ValueError("Invalid chronological decision interval")
+        if not np.isfinite(initial_capital) or initial_capital <= 0:
+            raise ValueError("Initial capital must be positive and finite")
+        self.initial_capital = initial_capital
         self.start, self.end, self.config, self.responsible = (
             start,
             end,
@@ -92,7 +105,7 @@ class PortfolioEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
         self.t = self.start
-        self.wealth = self.peak = 100000.0
+        self.wealth = self.peak = self.initial_capital
         # Begin in cash; the first allocation pays its actual execution costs.
         self.weights = np.array([0.0, 0.0, 0.0, 0.0, 1.0])
         self.drawdown = self.last_cost = self.total_turnover = 0.0
@@ -103,31 +116,33 @@ class PortfolioEnv(gym.Env):
         }
 
     def step(self, action):
+        return self._advance(action, rebalance=True)
+
+    def hold(self):
+        return self._advance(None, rebalance=False)
+
+    def _advance(self, action, rebalance):
         if self.finished:
             raise RuntimeError("Episode is complete; reset before stepping")
-        proposed = self.unconstrained_esg.project(action)
-        target = self.constraints.project(action)
+        proposed = (
+            self.unconstrained_esg.project(action) if rebalance else self.weights.copy()
+        )
+        target = self.constraints.project(action) if rebalance else self.weights.copy()
         previous = self.wealth
-        holdings = previous * self.weights
-        rate = (self.config.fee_bps + self.config.slippage_bps) / 10000
-        # Solve post-cost capital + cost(actual traded notional) = pre-trade wealth.
-        # One-way turnover = half absolute change in all five asset dollar holdings.
-        lo, hi = 0.0, previous
-        for _ in range(45):
-            invested = (lo + hi) / 2
-            traded = 0.5 * np.abs(invested * target - holdings).sum()
-            if invested + rate * traded > previous:
-                hi = invested
-            else:
-                lo = invested
-        invested = (lo + hi) / 2
-        traded = float(0.5 * np.abs(invested * target - holdings).sum())
-        fees = traded * self.config.fee_bps / 10000
-        slippage = traded * self.config.slippage_bps / 10000
-        turnover = traded / previous
-        next_holdings = invested * target * (1 + self.returns[self.t + 1])
-        self.wealth = float(next_holdings.sum())
-        self.weights = next_holdings / self.wealth
+        execution = execute(
+            previous,
+            self.weights,
+            target if rebalance else None,
+            self.returns[self.t + 1],
+            self.config.fee_bps,
+            self.config.slippage_bps,
+        )
+        self.wealth, self.weights = execution["value"], execution["weights"]
+        fees, slippage, turnover = (
+            execution["fees"],
+            execution["slippage"],
+            execution["turnover"],
+        )
         self.peak = max(self.peak, self.wealth)
         self.drawdown = 1 - self.wealth / self.peak
         self.last_cost = (fees + slippage) / previous

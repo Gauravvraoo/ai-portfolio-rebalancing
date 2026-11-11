@@ -1,3 +1,4 @@
+import Backtesting from "./pages/Backtesting";
 import Training from "./pages/Training";
 import { useState } from "react";
 import { NavLink, Routes, Route, Link, useLocation } from "react-router-dom";
@@ -407,6 +408,9 @@ function Rebalance() {
   );
 }
 function Comparison() {
+  return <Backtesting baseline={<BaselineComparison />} />;
+}
+function BaselineComparison() {
   const r = useApi("strategies");
   return (
     <>
@@ -568,7 +572,7 @@ export default function App() {
         <div className="sidebar-bottom">
           <div className="phase-card">
             <div>
-              <span className="tiny-dot" /> PHASE 02
+              <span className="tiny-dot" /> PHASE 03
             </div>
             <h3>A foundation for smarter investing.</h3>
             <p>

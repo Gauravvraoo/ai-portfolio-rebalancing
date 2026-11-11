@@ -1330,3 +1330,151 @@ select {
     flex-wrap: wrap;
   }
 }
+.backtest-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.backtest-form {
+  padding: 22px;
+}
+.backtest-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 18px;
+}
+.backtest-form .model-field {
+  max-width: 650px;
+}
+.checkbox-field {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: #b8c9ad;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 8px 0;
+}
+.checkbox-field input,
+.strategy-toggles input {
+  accent-color: #a5e87c;
+}
+.backtest-actions {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.backtest-actions .training-note {
+  margin: 0;
+}
+.backtest-form ~ .panel {
+  margin-top: 20px;
+}
+.backtest-empty {
+  min-height: 180px;
+}
+.backtest-exports {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.backtest-table {
+  font-variant-numeric: tabular-nums;
+}
+.strategy-policy {
+  display: block;
+  font-size: 9px;
+  color: #7e939f;
+  margin-top: 7px;
+  font-weight: 400;
+}
+.backtest-chart {
+  height: 330px;
+  padding: 24px 25px 15px 8px;
+}
+.strategy-toggles {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 24px 0;
+}
+.strategy-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.strategy-toggles ~ .panel {
+  margin-top: 20px;
+}
+.backtest-form .methodology .backtest-fields {
+  margin-top: 20px;
+}
+.panel-heading > select {
+  max-width: 220px;
+  font-size: 11px;
+}
+.backtest-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: #111a23;
+  z-index: 1;
+}
+.backtest-table th:first-child {
+  position: sticky;
+  left: 0;
+  background: #15202a;
+  z-index: 2;
+}
+.backtest-tabs + div.page-title {
+  margin-bottom: 25px;
+}
+.backtest-tabs ~ .panel {
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .backtest-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .backtest-chart {
+    height: 310px;
+    padding-right: 12px;
+  }
+  .panel-heading > select {
+    max-width: 160px;
+  }
+}
+@media (max-width: 500px) {
+  .backtest-fields {
+    grid-template-columns: 1fr;
+  }
+  .backtest-form {
+    padding: 18px;
+  }
+  .panel-heading:has(> select) {
+    flex-wrap: wrap;
+  }
+  .panel-heading > select {
+    max-width: 100%;
+  }
+  .backtest-chart {
+    height: 300px;
+  }
+  .backtest-table td,
+  .backtest-table th {
+    padding: 12px;
+  }
+  .backtest-table td:first-child,
+  .backtest-table th:first-child {
+    max-width: 150px;
+    white-space: normal;
+  }
+}
+.backtest-table td:first-child,
+.backtest-table th:first-child {
+  min-width: 145px;
+}
