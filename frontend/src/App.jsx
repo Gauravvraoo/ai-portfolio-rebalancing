@@ -1,3 +1,4 @@
+import Training from "./pages/Training";
 import { useState } from "react";
 import { NavLink, Routes, Route, Link, useLocation } from "react-router-dom";
 import {
@@ -186,9 +187,9 @@ function Dashboard() {
             <div className="future-card">
               <div className="eyebrow">THE NEXT CHAPTER</div>
               <h2>Intelligence meets intention.</h2>
-              <p>PPO-powered strategies are coming in a future phase.</p>
+              <p>Train and evaluate two PPO agents in the research lab.</p>
               <Link to="/training">
-                Explore the AI roadmap <ArrowUpRight size={16} />
+                Open the training lab <ArrowUpRight size={16} />
               </Link>
               <BrainCircuit className="future-icon" size={100} />
             </div>
@@ -270,65 +271,6 @@ function PageTitle({ title, text }) {
       <h1>{title}</h1>
       <p>{text}</p>
     </div>
-  );
-}
-function Training() {
-  return (
-    <>
-      <PageTitle
-        title="AI agent training"
-        text="A transparent roadmap for reinforcement learning integration."
-      />
-      <div className="notice">
-        <BrainCircuit size={17} />
-        PPO training is planned for a future phase. No model has been trained.
-      </div>
-      <Panel
-        title="From simulation to intelligent allocation"
-        subtitle="Phase 1 establishes the data and calculation foundation."
-      >
-        <div className="roadmap">
-          {[
-            [
-              "01",
-              "Data & portfolio engine",
-              "Available",
-              "SQLite asset universe, validated allocations, deterministic simulation and API.",
-            ],
-            [
-              "02",
-              "Gymnasium environment",
-              "Planned",
-              "Portfolio observations, long-only action space and a risk-aware reward function.",
-            ],
-            [
-              "03",
-              "Stable-Baselines3 PPO",
-              "Planned",
-              "Seeded training runs, saved models and asynchronous job tracking.",
-            ],
-            [
-              "04",
-              "Out-of-sample evaluation",
-              "Planned",
-              "Held-out evaluation, transaction costs and risk / ESG constraints.",
-            ],
-          ].map(([n, t, s, p]) => (
-            <div key={n}>
-              <span className="step">{n}</span>
-              <div>
-                <h3>{t}</h3>
-                <p>{p}</p>
-              </div>
-              <span className="chip">{s}</span>
-            </div>
-          ))}
-        </div>
-        <Link className="button primary" to="/rebalance">
-          Explore the working simulator <ChevronRight size={16} />
-        </Link>
-      </Panel>
-    </>
   );
 }
 function Rebalance() {
@@ -626,7 +568,7 @@ export default function App() {
         <div className="sidebar-bottom">
           <div className="phase-card">
             <div>
-              <span className="tiny-dot" /> PHASE 01
+              <span className="tiny-dot" /> PHASE 02
             </div>
             <h3>A foundation for smarter investing.</h3>
             <p>
@@ -635,7 +577,7 @@ export default function App() {
               Designed with purpose.
             </p>
             <Link to="/training">
-              View development roadmap <ArrowUpRight size={14} />
+              Open the training lab <ArrowUpRight size={14} />
             </Link>
           </div>
           <div className="profile">

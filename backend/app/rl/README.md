@@ -1,3 +1,11 @@
-# Reinforcement learning integration boundary
+# PPO research subsystem
 
-Phase 1 deliberately does not train an AI model. A future Gymnasium environment can consume the dated asset-price matrix from `services.portfolio.market` and emit validated long-only allocations. Keep PPO training jobs separate from HTTP request handling; persist job states, seeds, parameters and model artifacts before exposing training controls. Evaluate on held-out time periods with explicit transaction costs, risk and ESG constraints. No Gymnasium or Stable-Baselines3 dependency is needed in Phase 1.
+- `data.py`: immutable synthetic fixture loader, dataset manifest, chronological intervals.
+- `environment.py`: Gymnasium contract, causal observations, execution accounting, reward terms.
+- `constraints.py`: bounded-simplex projection and feasible ESG repair.
+- `config.py`: validated experiment configuration and infeasibility rejection.
+- `jobs.py`: FastAPI job routes and subprocess launcher; run one API worker.
+- `worker.py`: independent CPU PPO training, validation checkpoint selection and held-out evaluation.
+- `storage.py`: atomic JSON persistence and configurable experiment directory.
+
+Read the root README for data provenance, reward equations, operational limitations, installation and verification commands. Model zip files are trusted local artifacts only; never load models supplied by untrusted parties.

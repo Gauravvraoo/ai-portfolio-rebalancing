@@ -5,6 +5,7 @@ export async function request(path, options = {}) {
     let message = `Request failed (${response.status}). Check that the backend is running.`;
     try {
       const body = await response.json();
+      if (typeof body.detail === "string") message = body.detail;
       if (Array.isArray(body.detail))
         message = body.detail.map((x) => x.msg).join("; ");
     } catch {
