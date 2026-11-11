@@ -1,3 +1,5 @@
+import { useId } from "react";
+import { Loading, ErrorState } from "./Design";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -9,7 +11,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-export const colors = ["#a5e87c", "#7ca8ef", "#e6c279", "#b095ee", "#758692"];
+export const colors = ["#648cff", "#39c8bc", "#ad8cfa", "#f5bd72", "#8494ac"];
 export const money = (v) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -34,51 +36,58 @@ export function Panel({ title, subtitle, children, action, className = "" }) {
 export function State({ resource, children }) {
   if (resource.loading)
     return (
-      <div className="panel state" role="status">
-        <span className="spinner" /> Loading simulation data…
+      <div className="panel">
+        <Loading />
       </div>
     );
   if (resource.error)
     return (
-      <div className="panel state" role="alert">
-        <p>{resource.error}</p>
-        <button onClick={resource.retry}>Try again</button>
+      <div className="panel">
+        <ErrorState message={resource.error} retry={resource.retry} />
       </div>
     );
   return children(resource.data);
 }
-export function PerformanceChart({ data, lines, value = true }) {
+export function PerformanceChart({
+  data,
+  lines,
+  value = true,
+  percentage = false,
+}) {
+  const gradient = useId().replaceAll(":", "");
   return (
     <div
       className="chart"
       role="img"
       aria-label={
         value
-          ? "Portfolio value over the sample period"
+          ? percentage
+            ? "Cumulative portfolio return over the sample period"
+            : "Portfolio value over the sample period"
           : "Asset returns over the sample period"
       }
     >
       <ResponsiveContainer width="100%" height="100%">
         {lines ? (
           <LineChart data={data}>
-            <CartesianGrid stroke="#24303a" vertical={false} />
+            <CartesianGrid stroke="#26354b" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={(v) => v.slice(5, 7)}
-              stroke="#768594"
+              stroke="#9baac0"
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              stroke="#768594"
+              stroke="#9baac0"
               tickFormatter={(v) => `${v}%`}
               tickLine={false}
               axisLine={false}
             />
             <Tooltip
               contentStyle={{
-                background: "#17212b",
-                border: "1px solid #34404b",
+                background: "#182337",
+                border: "1px solid #34445e",
                 borderRadius: 10,
               }}
               formatter={(v) => `${Number(v).toFixed(2)}%`}
@@ -89,7 +98,10 @@ export function PerformanceChart({ data, lines, value = true }) {
                 key={s}
                 type="monotone"
                 dataKey={s}
-                stroke={colors[i]}
+                stroke={
+                  colors[["SPY", "AGG", "GLD", "QQQ", "CASH"].indexOf(s)] ||
+                  colors[i]
+                }
                 strokeWidth={2}
                 dot={false}
               />
@@ -98,12 +110,12 @@ export function PerformanceChart({ data, lines, value = true }) {
         ) : (
           <AreaChart data={data}>
             <defs>
-              <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#a5e87c" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#a5e87c" stopOpacity={0} />
+              <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#648cff" stopOpacity={0.22} />
+                <stop offset="100%" stopColor="#648cff" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#24303a" vertical={false} />
+            <CartesianGrid stroke="#26354b" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={(v) =>
@@ -111,35 +123,39 @@ export function PerformanceChart({ data, lines, value = true }) {
                   month: "short",
                 })
               }
-              stroke="#768594"
+              stroke="#9baac0"
               tickLine={false}
               axisLine={false}
               minTickGap={25}
             />
             <YAxis
               domain={["auto", "auto"]}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-              stroke="#768594"
+              tickFormatter={(v) =>
+                percentage ? `${v.toFixed(0)}%` : `$${(v / 1000).toFixed(0)}k`
+              }
+              stroke="#9baac0"
               tickLine={false}
               axisLine={false}
               width={52}
             />
             <Tooltip
               contentStyle={{
-                background: "#17212b",
-                border: "1px solid #34404b",
+                background: "#182337",
+                border: "1px solid #34445e",
                 borderRadius: 10,
               }}
-              formatter={(v) => money(v)}
+              formatter={(v) =>
+                percentage ? `${Number(v).toFixed(2)}%` : money(v)
+              }
             />
             <Area
               isAnimationActive={false}
               type="monotone"
               dataKey="value"
               name="Portfolio value"
-              stroke="#a5e87c"
+              stroke="#648cff"
               strokeWidth={2.5}
-              fill="url(#green)"
+              fill={`url(#${gradient})`}
             />
           </AreaChart>
         )}
@@ -149,7 +165,12 @@ export function PerformanceChart({ data, lines, value = true }) {
 }
 export function Holdings({ holdings }) {
   return (
-    <div className="table-scroll">
+    <div
+      className="table-scroll"
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable data table"
+    >
       <table>
         <thead>
           <tr>

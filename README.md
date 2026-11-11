@@ -1,6 +1,6 @@
 # Verdant — AI Portfolio Rebalancing with Risk and ESG Constraints
 
-Phases 1–3 of a B.Tech CSE final-year project: an educational portfolio simulation application. React + Vite + Tailwind CSS + Recharts frontend, FastAPI backend, and SQLite storage.
+Phases 1–4 of a B.Tech CSE final-year project: an educational portfolio simulation application. React + Vite + Tailwind CSS + Recharts frontend, FastAPI backend, and SQLite storage.
 
 **No live trading, actual market quotes or vendor ESG ratings.** Portfolio results are computed from explicitly synthetic sample prices. Phase 2 trains genuine Gymnasium/Stable-Baselines3 PPO agents; their results demonstrate software behavior, not real-market investment performance.
 
@@ -397,3 +397,42 @@ npm run test:backtesting
 ```
 
 The backtesting browser suite exercises real four/six-strategy runs, infeasible settings, all three exports, table results, strategy toggles/range zoom, allocation selection, persistence, mobile layout, the original comparison tab and API failure/retry. It uses real saved PPO models or genuinely trains a Quick pair when none exist. Backend tests cover each benchmark, each metric and undefined ratios, costs/cash, calendars, causality, exports, input errors, background failures, real model replay and exact parity with Phase 2's daily PPO evaluation. Generated result/model artifacts are not committed.
+
+## Phase 4: premium research interface
+
+The six-page frontend now uses a unified navy/charcoal design system with blue, teal and purple accents, responsive panels, chart tooltips, consistent forms, reduced-motion support and a fixed desktop sidebar. On smaller screens, navigation opens as a keyboard-contained drawer with Escape dismissal, focus restoration and an inert background. Backend endpoints, trading conventions, original fixtures and model compatibility are unchanged.
+
+- **Dashboard:** six baseline KPIs, value/return chart and 3M/6M/full-sample windows, allocation donut, holdings table, risk/ESG indicators and actual recent simulated trade records from the latest completed daily backtest. The activity source/strategy is labeled separately from the monthly baseline. Without a completed run, the activity panel offers an honest empty state and a working link to create a backtest.
+- **Market Analysis:** API-backed asset cards/table, category filtering and per-symbol chart visibility. Prices/returns retain their synthetic-data provenance.
+- **AI Agent Training:** redesigned experiment workflow, accessible progress bars, actual PPO status and learning/evaluation charts. Quick/Standard settings, constraints, error handling and background processes remain available.
+- **Portfolio Rebalancing:** allocation studio with synchronized number/range controls, actual proposed-weight donut, editable presets, backend-calculated results/holdings and a JSON export of the submitted simulation. The form is disabled during a request to prevent stale input/result mismatches. This page retains the Phase 1 buy-and-hold calculation; historical scheduled rebalancing is linked separately.
+- **Strategy Comparison:** redesigned setup, saved-run workspace, computed strategy table, filters, interactive cumulative/drawdown/risk-return/allocation charts and all original exports. Source links use `?run=<uuid>` to open the exact saved backtest. Phase 1 comparison remains in its own tab.
+- **Reports:** research library with the original baseline CSV, selectable saved backtest JSON/metrics CSV/history CSV, real experiment metadata JSON and a saved-backtest archive. Experiment export contains only fields actually recorded by the API; model binaries remain in the artifact directory.
+
+### Metric and activity integrity
+
+The baseline dashboard Sharpe ratio is newly calculated **in the frontend from the API's cent-rounded monthly portfolio values**, using `mean(monthly returns) / sample_std(monthly returns) × sqrt(12)` with a clearly stated 0% risk-free assumption. It is `N/A` when undefined. Other baseline KPIs come directly from the existing backend. Chart range changes do not recompute or rebase the full-period KPI values.
+
+Dashboard activity is not invented from the baseline holdings. It reads the latest completed backtest, selects its actual strategy history, and displays only entries with `rebalance=true`. Dates, turnover, target weights, fees and slippage come from those records. No completed backtest means no activity records. Prices remain synthetic, ESG scores illustrative, and all transactions simulated.
+
+### Development and validation
+
+Existing installation/run commands still apply. Refresh frontend dependencies with `npm ci` after switching to this branch. New developer-only dependencies include `@axe-core/playwright` for accessibility checks. Frontend unit tests run with Node's built-in test runner:
+
+```bash
+npm test --prefix frontend
+npm run build --prefix frontend
+```
+
+With the backend and Vite frontend running, from `frontend`:
+
+```bash
+npm run test:smoke
+npm run test:training
+npm run test:backtesting
+npm run test:gui
+```
+
+Use `CHROMIUM_PATH` or install Playwright Chromium as documented earlier. The GUI suite checks all six pages at 1440px, 820px and 390px, runs automated axe WCAG A/AA audits at desktop/mobile sizes, verifies calculated dashboard values, filters, source links, new exports, mobile keyboard behavior and honest empty states. Run the earlier workflow suites first to create actual trained models and completed backtests. It captures the final dashboard and comparison pages under `docs/screenshots/phase4/` and writes its detailed accessibility report to the OS temporary directory. Accessibility automation supplements manual keyboard/visual checks; it is not a complete assistive-technology certification.
+
+Screenshots: [dashboard](docs/screenshots/phase4/dashboard-desktop.png), [comparison](docs/screenshots/phase4/comparison-desktop.png), [mobile dashboard](docs/screenshots/phase4/dashboard-mobile.png), [mobile comparison](docs/screenshots/phase4/comparison-mobile.png). They show actual computed synthetic-data results from the verification run, not promised financial performance.

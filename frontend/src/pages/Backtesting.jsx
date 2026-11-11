@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { PageHeader, WorkspaceSteps } from "../components/Design";
 import { FlaskConical, Play, Download, RefreshCw } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -19,16 +20,16 @@ import {
 import { request } from "../api";
 import { Panel, money } from "../components/UI";
 const palette = [
-  "#a5e87c",
-  "#7ca8ef",
-  "#e6c279",
-  "#b095ee",
-  "#ed9da9",
-  "#61c8bb",
+  "#648cff",
+  "#39c8bc",
+  "#ad8cfa",
+  "#f5bd72",
+  "#ef91bc",
+  "#76b9ed",
 ];
 const tooltipStyle = {
-  background: "#17212b",
-  border: "1px solid #34404b",
+  background: "#182337",
+  border: "1px solid #34445e",
   borderRadius: 8,
 };
 const number = (v, d = 2) => (v == null ? "N/A" : Number(v).toFixed(d));
@@ -51,6 +52,7 @@ function SeriesChart({ rows, strategies, field }) {
   return (
     <div
       className="backtest-chart"
+      role="region"
       aria-label={
         field === "drawdown"
           ? "Strategy drawdowns"
@@ -62,12 +64,12 @@ function SeriesChart({ rows, strategies, field }) {
           <CartesianGrid stroke="#25343e" vertical={false} />
           <XAxis
             dataKey="date"
-            stroke="#81929e"
+            stroke="#a1afc4"
             minTickGap={35}
             tickFormatter={(s) => s.slice(5)}
           />
           <YAxis
-            stroke="#81929e"
+            stroke="#a1afc4"
             width={60}
             tickFormatter={(v) => `${number(v, 1)}%`}
           />
@@ -90,8 +92,8 @@ function SeriesChart({ rows, strategies, field }) {
           <Brush
             dataKey="date"
             height={22}
-            stroke="#66805d"
-            fill="#111b24"
+            stroke="#647da8"
+            fill="#111c30"
             tickFormatter={(s) => s.slice(5)}
           />
         </LineChart>
@@ -100,10 +102,11 @@ function SeriesChart({ rows, strategies, field }) {
   );
 }
 export default function Backtesting({ baseline }) {
+  const [search] = useSearchParams();
   const [tab, setTab] = useState("advanced"),
     [options, setOptions] = useState(null),
     [jobs, setJobs] = useState([]),
-    [id, setId] = useState(""),
+    [id, setId] = useState(() => search.get("run") || ""),
     [job, setJob] = useState(null),
     [error, setError] = useState(""),
     [metaError, setMetaError] = useState(""),
@@ -282,13 +285,18 @@ export default function Backtesting({ baseline }) {
         baseline
       ) : (
         <>
-          <div className="page-title">
-            <div className="eyebrow">HISTORICAL REPLAY LAB</div>
-            <h1>Strategy comparison</h1>
-            <p>
-              One test period. Shared execution. Six strategies to investigate.
-            </p>
-          </div>
+          <PageHeader
+            eyebrow="STRATEGY RESEARCH"
+            title="Strategy comparison"
+            description="Six perspectives. One fair test. Find the trade-offs behind the returns."
+          />
+          <WorkspaceSteps
+            items={[
+              ["Configure", "Choose a model and common execution settings"],
+              ["Replay", "Run all strategies on the same held-out period"],
+              ["Compare", "Explore calculated metrics and export the evidence"],
+            ]}
+          />
           <div className="notice">
             <FlaskConical size={17} />
             <span>
@@ -580,7 +588,12 @@ export default function Backtesting({ baseline }) {
                     title="Computed strategy metrics"
                     subtitle="Percentage metrics use 252 periods/year; undefined ratios are N/A"
                   >
-                    <div className="table-scroll">
+                    <div
+                      className="table-scroll"
+                      tabIndex={0}
+                      role="region"
+                      aria-label="Scrollable data table"
+                    >
                       <table className="backtest-table">
                         <thead>
                           <tr>
@@ -671,6 +684,7 @@ export default function Backtesting({ baseline }) {
                       >
                         <div
                           className="backtest-chart"
+                          role="region"
                           aria-label="Risk return scatterplot"
                         >
                           <ResponsiveContainer width="100%" height="100%">
@@ -681,7 +695,7 @@ export default function Backtesting({ baseline }) {
                                 dataKey="x"
                                 name="Annualized volatility"
                                 unit="%"
-                                stroke="#81929e"
+                                stroke="#a1afc4"
                                 domain={["auto", "auto"]}
                               />
                               <YAxis
@@ -689,7 +703,7 @@ export default function Backtesting({ baseline }) {
                                 dataKey="y"
                                 name="Annualized return"
                                 unit="%"
-                                stroke="#81929e"
+                                stroke="#a1afc4"
                                 domain={["auto", "auto"]}
                               />
                               <Tooltip
@@ -737,6 +751,7 @@ export default function Backtesting({ baseline }) {
                   >
                     <div
                       className="backtest-chart"
+                      role="region"
                       aria-label="Asset allocation history"
                     >
                       <ResponsiveContainer width="100%" height="100%">
@@ -744,7 +759,7 @@ export default function Backtesting({ baseline }) {
                           <CartesianGrid stroke="#25343e" vertical={false} />
                           <XAxis
                             dataKey="date"
-                            stroke="#81929e"
+                            stroke="#a1afc4"
                             minTickGap={35}
                             tickFormatter={(s) => s.slice(5)}
                           />
@@ -752,7 +767,7 @@ export default function Backtesting({ baseline }) {
                             domain={[0, 100]}
                             allowDataOverflow
                             ticks={[0, 25, 50, 75, 100]}
-                            stroke="#81929e"
+                            stroke="#a1afc4"
                             tickFormatter={(v) => number(v, 0) + "%"}
                           />
                           <Tooltip
@@ -775,8 +790,8 @@ export default function Backtesting({ baseline }) {
                           <Brush
                             dataKey="date"
                             height={22}
-                            stroke="#66805d"
-                            fill="#111b24"
+                            stroke="#647da8"
+                            fill="#111c30"
                             tickFormatter={(s) => s.slice(5)}
                           />
                         </AreaChart>

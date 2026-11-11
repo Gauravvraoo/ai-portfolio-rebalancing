@@ -1,3 +1,4 @@
+import { PageHeader, WorkspaceSteps } from "../components/Design";
 import { useEffect, useState } from "react";
 import { BrainCircuit, Play, RefreshCw } from "lucide-react";
 import {
@@ -19,6 +20,7 @@ function Curve({ rows, validation = false }) {
   return (
     <div
       className="chart"
+      role="region"
       aria-label={
         validation
           ? "Validation return by training step"
@@ -28,16 +30,16 @@ function Curve({ rows, validation = false }) {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows}>
           <CartesianGrid stroke="#24303a" vertical={false} />
-          <XAxis dataKey="steps" stroke="#768594" />
+          <XAxis dataKey="steps" stroke="#a1afc4" />
           <YAxis
-            stroke="#768594"
+            stroke="#a1afc4"
             width={70}
             tickFormatter={(n) => Number(n).toFixed(3)}
           />
           <Tooltip
             contentStyle={{
-              background: "#17212b",
-              border: "1px solid #34404b",
+              background: "#182337",
+              border: "1px solid #34445e",
             }}
             formatter={(n) => Number(n).toFixed(5)}
           />
@@ -45,7 +47,7 @@ function Curve({ rows, validation = false }) {
           <Line
             name={validation ? "Validation return (%)" : "Mean training reward"}
             dataKey={validation ? "validation_return" : "mean_training_reward"}
-            stroke="#a5e87c"
+            stroke={validation ? "#ad8cfa" : "#39c8bc"}
             dot={false}
             isAnimationActive={false}
           />
@@ -149,14 +151,24 @@ export default function Training() {
   }
   return (
     <>
-      <div className="page-title">
-        <div className="eyebrow">REINFORCEMENT LEARNING LAB</div>
-        <h1>AI agent training</h1>
-        <p>
-          Train two independent PPO policies. Evaluate saved models on a
-          chronological held-out split.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="THE REINFORCEMENT LEARNING LAB"
+        title="AI agent training"
+        description="Teach two independent policies. Evaluate their decisions with evidence."
+      />
+      <WorkspaceSteps
+        items={[
+          [
+            "Design an experiment",
+            "Set rewards, bounds and illustrative ESG constraints",
+          ],
+          [
+            "Train both policies",
+            "Independent profit and responsible PPO agents",
+          ],
+          ["Evaluate honestly", "Replay saved models on untouched test data"],
+        ]}
+      />
       <div className="notice">
         <BrainCircuit size={18} />
         <span>
@@ -340,6 +352,7 @@ export default function Training() {
                         </span>
                       </div>
                       <progress
+                        aria-label={`${names[agent]} training progress`}
                         value={state.steps}
                         max={selected.timesteps_per_agent}
                       />

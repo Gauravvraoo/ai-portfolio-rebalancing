@@ -25,6 +25,13 @@ export function useApi(path) {
     let active = true;
     setLoading(true);
     setError("");
+    if (!path) {
+      setData(null);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
     request(path)
       .then((d) => {
         if (active) setData(d);
@@ -40,4 +47,19 @@ export function useApi(path) {
     };
   }, [path, version]);
   return { data, error, loading, retry };
+}
+
+export function useLatestBacktest() {
+  const list = useApi("backtests");
+  const latest = list.data?.find((j) => j.status === "completed");
+  const detail = useApi(latest ? `backtests/${latest.id}` : null);
+  return {
+    data: detail.data,
+    loading: list.loading || Boolean(latest && detail.loading),
+    error: list.error || detail.error,
+    retry: () => {
+      list.retry();
+      detail.retry();
+    },
+  };
 }
