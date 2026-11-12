@@ -38,6 +38,20 @@ Check the backend in another PowerShell terminal:
 Invoke-RestMethod http://127.0.0.1:8000/api/health
 ```
 
+## Windows one-click launcher
+
+After completing the Windows dependency installation above once, double-click **`START_PROJECT.bat`** in the repository root. You can also run `.\START_PROJECT.bat` from PowerShell. No administrator access is needed. The launcher uses this repository's existing `.venv\Scripts\python.exe` and `frontend/node_modules`; Node.js 22+ must be on PATH. It does not install dependencies or replace environments.
+
+The launcher supports repository paths containing spaces. It checks ports **8000** and **5173** before starting anything and refuses occupied/unavailable ports; it never stops an existing service or silently switches ports. Stop your existing development servers first. It runs one FastAPI process on `127.0.0.1:8000` and Vite on `localhost:5173` with strict port selection. For its child processes only, it sets `API_PROXY_TARGET=http://127.0.0.1:8000`, avoiding inherited proxy-port mismatches.
+
+Before opening **http://localhost:5173** in your default browser, it verifies backend database health, the Vite application response, and backend health/portfolio data through Vite's API proxy. Startup waits up to 90 seconds per service, with bounded HTTP requests and early detection of child-process failure. If opening the browser fails, open the address manually.
+
+**Keep the launcher window open. Press Q or Ctrl+C in that window to shut down.** This requests shutdown of only the process groups started by this launcher, allowing FastAPI to stop its training/backtest workers. If a service does not stop within 30 seconds, the launcher force-stops that owned process tree. Avoid the window's X button or Task Manager for normal shutdown: abrupt console termination cannot guarantee cleanup. Stop or finish experiments before shutting down; interrupted jobs are marked failed on the next backend startup, with artifacts retained.
+
+Backend and frontend output is saved in a unique `%TEMP%\verdant-launcher-*` directory printed at startup. Startup/runtime errors stop owned services and leave an error message visible. Missing dependency errors point to the manual setup instructions. Logs are retained for troubleshooting. Existing datasets, models and experiments are not deleted or replaced; normal backend startup/operation retains its existing database initialization and interrupted-job recovery behavior.
+
+Portable launcher checks: `python -m unittest discover -s scripts -p test_windows_launcher.py`. These cover occupied ports, real HTTP/proxy readiness, failure/timeout handling and owned-process cleanup. **Windows-specific execution still needs local verification**, especially double-click launch from a path with spaces, browser opening, Q/Ctrl+C cleanup, and occupied-port refusal. Linux checks cannot certify Windows console/process behavior.
+
 ## Run on Linux / macOS
 
 ```bash
