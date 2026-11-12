@@ -1,6 +1,6 @@
 # Verdant — AI Portfolio Rebalancing with Risk and ESG Constraints
 
-Phases 1–4 of a B.Tech CSE final-year project: an educational portfolio simulation application. React + Vite + Tailwind CSS + Recharts frontend, FastAPI backend, and SQLite storage.
+Phases 1–5 of a B.Tech CSE final-year project: an educational portfolio simulation application. React + Vite + Tailwind CSS + Recharts frontend, FastAPI backend, and SQLite storage.
 
 **No live trading, actual market quotes or vendor ESG ratings.** Portfolio results are computed from explicitly synthetic sample prices. Phase 2 trains genuine Gymnasium/Stable-Baselines3 PPO agents; their results demonstrate software behavior, not real-market investment performance.
 
@@ -370,7 +370,7 @@ Example body (omit `experiment_id` for four benchmarks):
 
 Add a trained experiment's UUID as `experiment_id` for six strategies. `start_date`/`end_date` optionally select observed boundary closes within its held-out test interval. The complete schema is available in FastAPI `/docs`. Unknown request fields are rejected to avoid silently ignoring misspelled settings.
 
-Artifacts are stored under ignored `backend/backtests/<uuid>/`: `job.json`, `dataset.npz`, `result.json`, `worker.log`, and copies of both models when applicable. `PORTFOLIO_BACKTEST_DIR` can override this directory (use an absolute path). Existing SQLite assets/prices and Phase 2 artifacts are preserved. Completed runs survive API/browser restart; live workers are not restored from snapshots. As in Phase 2, run a single API worker and keep it running during jobs; this is a local research process manager, not a resumable production queue. One backtest is admitted at a time. Forced interruption can leave unfinished state. No authentication, real-market ingestion or walk-forward optimization is added.
+Artifacts are stored under ignored `backend/backtests/<uuid>/`: `job.json`, `dataset.npz`, `result.json`, `worker.log`, and copies of both models when applicable. `PORTFOLIO_BACKTEST_DIR` can override this directory (use an absolute path). Existing SQLite assets/prices and Phase 2 artifacts are preserved. Completed runs survive API/browser restart; live workers are not restored from snapshots. As in Phase 2, run a single API worker and keep it running during jobs; this is a local research process manager, not a resumable production queue. One backtest is admitted at a time. After API restart, unfinished runs are marked failed; create a new run. No authentication, real-market ingestion or walk-forward optimization is added.
 
 ### Phase 3 verification commands
 
@@ -436,3 +436,33 @@ npm run test:gui
 Use `CHROMIUM_PATH` or install Playwright Chromium as documented earlier. The GUI suite checks all six pages at 1440px, 820px and 390px, runs automated axe WCAG A/AA audits at desktop/mobile sizes, verifies calculated dashboard values, filters, source links, new exports, mobile keyboard behavior and honest empty states. Run the earlier workflow suites first to create actual trained models and completed backtests. It captures the final dashboard and comparison pages under `docs/screenshots/phase4/` and writes its detailed accessibility report to the OS temporary directory. Accessibility automation supplements manual keyboard/visual checks; it is not a complete assistive-technology certification.
 
 Screenshots: [dashboard](docs/screenshots/phase4/dashboard-desktop.png), [comparison](docs/screenshots/phase4/comparison-desktop.png), [mobile dashboard](docs/screenshots/phase4/dashboard-mobile.png), [mobile comparison](docs/screenshots/phase4/comparison-mobile.png). They show actual computed synthetic-data results from the verification run, not promised financial performance.
+
+
+## Phase 5: integration and demonstration readiness
+
+Development and production-preview API proxies both default to `http://127.0.0.1:8000`, matching the backend commands above. For another backend port, set `API_PROXY_TARGET` in the shell that starts Vite, for example `API_PROXY_TARGET=http://127.0.0.1:8001 npm run dev` on Linux/macOS. This is a server-side proxy setting; browser requests and downloads remain same-origin `/api` requests. Restart Vite after changing it.
+
+JSON requests have a 15-second response timeout, actionable network/proxy/validation errors, and cancellation on resource unmount. Training and backtesting launch asynchronous workers; the timeout does not limit their training duration. Training status polls do not overlap. Saved comparison links also update the selected run when only the URL query changes.
+
+Run a single backend process. Graceful API shutdown terminates owned workers; on the next startup, unfinished persisted jobs become failed with a recovery message. Completed/trained results and artifacts are retained. Interrupted jobs are not resumed; submit a new run. Forced termination can leave orphan processes until the machine stops; multi-worker deployment remains unsupported.
+
+### Demonstration checklist
+
+1. Start FastAPI on 8000 and Vite on 5173 using the commands above. Confirm the dashboard shows API connected.
+2. Inspect the dashboard, market filters, and baseline risk/illustrative ESG values.
+3. Submit an allocation totaling 100%, inspect calculated holdings, and export the result.
+4. Train Quick mode, wait for both agents, then evaluate the saved models on the held-out test split.
+5. Select that experiment in Strategy Comparison, run a backtest, inspect all six strategies and charts, and export JSON/CSV.
+6. Open Reports, follow a saved-run source link, and verify exports. Demonstrate mobile navigation if required.
+
+Additional regression validation (after the existing smoke/training/backtesting suites have created real records):
+
+```bash
+# From frontend; requires backend 8000, Vite 5173 and preview 4173.
+npm run build
+npm run preview -- --port 4173 --strictPort
+# In another terminal, from frontend:
+npm run test:integration
+```
+
+Set `CHROMIUM_PATH=/usr/bin/chromium` when using system Chromium on Linux. In restricted cloud filesystems, `npm ci --cache /tmp/verdant-npm-cache` uses a writable cache. The GUI suite accepts `SCREENSHOT_DIR` to keep generated screenshots outside tracked documentation. See [Phase 5 validation](docs/phase5-validation.md) for results and limitations.

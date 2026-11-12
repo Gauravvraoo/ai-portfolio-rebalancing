@@ -226,7 +226,7 @@ const os = require("node:os");
   assert.equal(await page.locator(".activity-item").count(), 0);
   await page.unroute("**/api/backtests");
   await page.setViewportSize({ width: 1440, height: 1000 });
-  const output = path.resolve(__dirname, "../../docs/screenshots/phase4");
+  const output = process.env.SCREENSHOT_DIR || path.resolve(__dirname, "../../docs/screenshots/phase4");
   await fs.mkdir(output, { recursive: true });
   for (const [route, filename, ready] of [
     ["/", "dashboard-desktop.png", "Your holdings"],

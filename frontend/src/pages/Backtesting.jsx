@@ -191,6 +191,36 @@ export default function Backtesting({ baseline }) {
       clearTimeout(timer);
     };
   }, [id, refresh]);
+  useEffect(() => {
+    const run = search.get("run");
+    if (run) {
+      setId(run);
+      setTab("advanced");
+    }
+  }, [search]);
+  const hasActiveJobs = jobs.some((j) => ["queued", "running"].includes(j.status));
+  useEffect(() => {
+    if (!hasActiveJobs) return;
+    const controller = new AbortController();
+    let stopped = false, timer;
+    async function refreshJobs() {
+      try {
+        const list = await request("backtests", { signal: controller.signal });
+        if (!stopped) setJobs(list);
+      } catch {
+        // Selected-run polling surfaces connection errors; keep retrying the
+        // list so viewing an older result cannot freeze another run's status.
+      } finally {
+        if (!stopped) timer = setTimeout(refreshJobs, 1500);
+      }
+    }
+    timer = setTimeout(refreshJobs, 1500);
+    return () => {
+      stopped = true;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [hasActiveJobs]);
   function change(k, v) {
     setConfig((c) => ({ ...c, [k]: v }));
     setError("");
@@ -264,7 +294,7 @@ export default function Backtesting({ baseline }) {
       result.symbols.map((s, i) => [s, r.weights[i] * 100]),
     ),
   }));
-  const running = jobs.some((j) => ["queued", "running"].includes(j.status));
+  const running = hasActiveJobs;
   return (
     <>
       <div className="backtest-tabs">

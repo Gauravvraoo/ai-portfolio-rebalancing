@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import csv
 import io
+import subprocess
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -9,11 +10,39 @@ from app.database import initialize, connect
 from app.services.portfolio import simulate, market
 from app.rl.jobs import router as training_router
 from app.backtesting.jobs import router as backtesting_router
+from app.rl import jobs as training_jobs
+from app.backtesting import jobs as backtest_jobs
+from app.rl.storage import read, write, now
 
 @asynccontextmanager
 async def lifespan(app):
     initialize()
-    yield
+    # Processes are not restored with saved artifacts. Under the documented
+    # single-API-worker model, unfinished jobs from a previous API lifetime
+    # must not permanently block new work or appear to keep progressing.
+    for root, states in [
+        (training_jobs.storage.ROOT, {"queued", "running", "evaluating"}),
+        (backtest_jobs.ROOT, {"queued", "running"}),
+    ]:
+        for file in root.glob("*/job.json"):
+            job = read(file)
+            if job["status"] in states:
+                job.update(status="failed", updated_at=now(),
+                           error="API restarted before completion. Create a new run; previous artifacts are retained.")
+                write(file, job)
+    try:
+        yield
+    finally:
+        for manager in (training_jobs, backtest_jobs):
+            for proc in manager.processes.values():
+                if proc.poll() is None:
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
+            manager.processes.clear()
 
 app = FastAPI(title="Verdant Portfolio Simulation", version="1.0.0", lifespan=lifespan)
 app.include_router(training_router)

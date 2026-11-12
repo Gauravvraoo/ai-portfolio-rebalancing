@@ -82,6 +82,7 @@ export default function Training() {
   useEffect(() => {
     const controller = new AbortController();
     let stopped = false;
+    let timer;
     async function poll() {
       try {
         const [list, description] = await Promise.all([
@@ -99,14 +100,15 @@ export default function Training() {
           setPollError(e.message);
           setLoading(false);
         }
+      } finally {
+        if (!stopped) timer = setTimeout(poll, 2000);
       }
     }
     poll();
-    const timer = setInterval(poll, 2000);
     return () => {
       stopped = true;
       controller.abort();
-      clearInterval(timer);
+      clearTimeout(timer);
     };
   }, [refresh]);
   const selected = jobs.find((j) => j.id === id) || jobs[0];
