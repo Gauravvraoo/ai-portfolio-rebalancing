@@ -32,6 +32,8 @@ import {
   Loading,
   ErrorState,
 } from "../components/Design";
+import { useDataSource, Provenance } from "../components/DataSource";
+import { marketPath, sourceName } from "../lib/dataSource";
 import { monthlySharpe, recentTrades } from "../lib/portfolio";
 function RecentActivity() {
   const resource = useLatestBacktest();
@@ -86,7 +88,7 @@ function RecentActivity() {
               </select>
             </label>
             <span>
-              Run {resource.data.id.slice(0, 8)} · synthetic daily data
+              Run {resource.data.id.slice(0, 8)} · {sourceName(result.data?.data_source)}
             </span>
           </div>
           {events.length ? (
@@ -133,6 +135,14 @@ function RecentActivity() {
     </Panel>
   );
 }
+function HistoricalSourceSummary() {
+  const { source, range, cashYield } = useDataSource();
+  const resource = useApi(source === 'real' ? marketPath(source, range, cashYield) : null, 120000);
+  if (source !== 'real') return null;
+  return <Panel title="Active historical market dataset" subtitle="Separate from the synthetic baseline KPIs below">
+    <State resource={resource}>{d => <><Provenance data={d.data} /><p className="muted">{d.history.length} aligned daily observations. Open Market Analysis for adjusted returns, volatility and correlations; train on this source to create a compatible six-strategy comparison.</p><Link className="text-link" to="/market">Explore historical market data</Link></>}</State>
+  </Panel>;
+}
 export default function Dashboard() {
   const resource = useApi("portfolio");
   const [window, setWindow] = useState("All"),
@@ -151,6 +161,7 @@ export default function Dashboard() {
           <ArrowLeftRight size={15} /> Rebalance portfolio
         </Link>
       </PageHeader>
+      <HistoricalSourceSummary />
       <DataNotice>
         <strong>Baseline simulation</strong> · Monthly synthetic prices, Dec
         2023 – Dec 2024. Activity below comes from a separate, labeled daily

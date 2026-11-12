@@ -1,9 +1,12 @@
 from pydantic import BaseModel, Field, model_validator
 from app.rl.data import ESG
 from app.rl.constraints import Constraints
+from typing import Literal
 
 
 class ExperimentConfig(BaseModel):
+    data_source: Literal["synthetic", "real"] = "synthetic"
+    data_range: Literal["1Y", "3Y", "5Y"] = "3Y"
     mode: str = Field(default="quick", pattern="^(quick|standard)$")
     seed: int = Field(default=7, ge=0, le=1000000)
     fee_bps: float = Field(default=10, ge=0, le=100, allow_inf_nan=False)

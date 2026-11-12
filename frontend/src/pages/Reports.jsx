@@ -20,6 +20,7 @@ import {
   ErrorState,
 } from "../components/Design";
 import { downloadApi, downloadBlob } from "../lib/portfolio";
+import { sourceName } from "../lib/dataSource";
 export default function Reports() {
   const baseline = useApi("portfolio"),
     backtests = useApi("backtests"),
@@ -71,9 +72,7 @@ export default function Reports() {
         </Link>
       </PageHeader>
       <DataNotice>
-        Exports contain actual API results from synthetic data. ESG scores and
-        cash yield are illustrative assumptions. No live trades or investment
-        statements.
+        Baseline exports remain synthetic. Saved research exports retain their own data source, adjusted-price provenance and configuration, independent of the current selection. ESG scores and cash yield are illustrative assumptions. No live trading or investment statements.
       </DataNotice>
       {error && (
         <div className="notice negative" role="alert">
@@ -166,7 +165,7 @@ export default function Reports() {
                 >
                   {completed.map((j) => (
                     <option key={j.id} value={j.id}>
-                      {j.id.slice(0, 8)} · {j.config.rebalance_frequency} ·{" "}
+                      {j.id.slice(0, 8)} · {sourceName(j.data?.data_source)} · {j.config.rebalance_frequency} ·{" "}
                       {j.config.experiment_id ? "6 strategies" : "4 benchmarks"}
                     </option>
                   ))}
@@ -253,7 +252,7 @@ export default function Reports() {
                 >
                   {training.data.map((j) => (
                     <option key={j.id} value={j.id}>
-                      {j.id.slice(0, 8)} · {j.config.mode} · {j.status}
+                      {j.id.slice(0, 8)} · {sourceName(j.data?.data_source)} · {j.config.mode} · {j.status}
                     </option>
                   ))}
                 </select>
@@ -327,6 +326,7 @@ export default function Reports() {
                   <tr key={j.id}>
                     <td>
                       <strong className="mono">{j.id.slice(0, 8)}</strong>
+                      <small>{sourceName(j.data?.data_source)}</small>
                     </td>
                     <td>
                       {j.config.experiment_id

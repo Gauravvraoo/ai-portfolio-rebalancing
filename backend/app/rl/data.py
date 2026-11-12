@@ -37,13 +37,21 @@ def splits(length):
     return {"train": (WINDOW, a), "validation": (a, b), "test": (b, length - 1)}
 
 
-def manifest(dates, prices):
+def manifest(dates, prices, provenance=None):
     return {
+        "data_source": "synthetic",
+        "provider": "Repository seeded daily fixture",
+        "data_range": "fixture",
+        "price_adjustment": "Synthetic prices; no corporate actions",
+        "start_date": str(dates[0]),
+        "end_date": str(dates[-1]),
+        "cash_assumption": "CASH is an account, not a ticker. Snapshot price is 1; configured annual yield accrues at 252 observed transitions/year in execution.",
         "label": "Seeded synthetic daily prices, not real historical quotes; illustrative ESG assumptions",
         "sha256": hashlib.sha256(prices.tobytes() + dates.tobytes()).hexdigest(),
         "observations": len(dates),
         "symbols": list(SYMBOLS),
         "esg": ESG.tolist(),
+        **(provenance or {}),
         "splits": {
             k: {
                 "decision_start": str(dates[a]),

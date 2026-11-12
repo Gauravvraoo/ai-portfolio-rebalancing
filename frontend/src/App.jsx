@@ -26,6 +26,7 @@ import Reports from "./pages/Reports";
 import Training from "./pages/Training";
 import Backtesting from "./pages/Backtesting";
 import BaselineComparison from "./pages/BaselineComparison";
+import { DataSourceControls } from "./components/DataSource";
 const navigation = [
   ["/", "Dashboard", LayoutDashboard],
   ["/market", "Market Analysis", ChartNoAxesCombined],
@@ -237,6 +238,7 @@ export default function App() {
         </header>
         <main id="main-content" tabIndex={-1} ref={main}>
           <div className="page-content" key={location.pathname}>
+            <DataSourceControls />
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/market" element={<Market />} />

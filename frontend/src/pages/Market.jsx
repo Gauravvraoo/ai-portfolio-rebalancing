@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApi } from "../api";
+import { useDataSource, Provenance } from "../components/DataSource";
+import { marketPath, sourceName } from "../lib/dataSource";
 import {
   Panel,
   State,
@@ -23,7 +25,9 @@ import {
   StatCard,
 } from "../components/Design";
 export default function Market() {
-  const resource = useApi("market");
+  const { source, range, cashYield } = useDataSource();
+  const [refreshToken, setRefreshToken] = useState(0);
+  const resource = useApi(marketPath(source, range, cashYield, refreshToken > 0) + `&refresh_token=${refreshToken}`, 120000);
   const [hidden, setHidden] = useState([]),
     [category, setCategory] = useState("All assets");
   return (
@@ -38,11 +42,14 @@ export default function Market() {
         </Link>
       </PageHeader>
       <DataNotice>
-        Synthetic sample prices · No live quotes. ESG scores are illustrative
-        assumptions, not vendor ratings.
+        {sourceName(source)} · Historical observations, not live quotes. ESG scores are illustrative assumptions, not verified vendor ratings.
       </DataNotice>
+      <button disabled={resource.loading} onClick={() => { setRefreshToken(v => v + 1); }}>
+        {resource.loading ? 'Loading market data…' : 'Refresh market data'}
+      </button>
       <State resource={resource}>
         {(d) => {
+          if (!d.history?.length) return <EmptyState title="No historical prices available" description="Refresh or choose another source. No synthetic fallback is used." />;
           const assets = d.assets.filter(
             (a) => category === "All assets" || a.category === category,
           );
@@ -51,6 +58,7 @@ export default function Market() {
             .map((a) => a.symbol);
           return (
             <>
+              <Provenance data={d.data} />
               <div className="stats market-summary">
                 <StatCard
                   label="Investable assets"
@@ -59,7 +67,7 @@ export default function Market() {
                   icon={Layers3}
                 />
                 <StatCard
-                  label="Monthly observations"
+                  label={source === "real" ? "Daily observations" : "Monthly observations"}
                   value={d.history.length}
                   detail={`${d.history[0].date} → ${d.history.at(-1).date}`}
                   icon={CalendarRange}
@@ -67,8 +75,8 @@ export default function Market() {
                 />
                 <StatCard
                   label="Data provenance"
-                  value="Synthetic"
-                  detail="Reproducible educational fixture"
+                  value={source === "real" ? "Historical" : "Synthetic"}
+                  detail={d.data?.provider || "Reproducible educational fixture"}
                   icon={ChartNoAxesCombined}
                   tone="teal"
                 />
@@ -129,9 +137,9 @@ export default function Market() {
                 )}
                 <div className="chart-foot">
                   <span>
-                    <i /> Monthly synthetic observations
+                    <i /> {source === "real" ? "Aligned adjusted daily observations" : "Monthly synthetic observations"}
                   </span>
-                  <span>Returns exclude dividends, fees and taxes</span>
+                  <span>{source === "real" ? "Adjusted for splits/dividends; excludes fees/taxes" : "Returns exclude dividends, fees and taxes"}</span>
                 </div>
               </Panel>
               <div className="section-heading">
@@ -169,7 +177,7 @@ export default function Market() {
                         >
                           {pct(a.period_return)}
                         </span>
-                        <small>Sample end price · full-period return</small>
+                        <small>{a.symbol === "CASH" && source === "real" ? "Cash account value per initial $1" : "End adjusted/sample close"} · full-period return</small>
                       </div>
                       <div className="asset-card-footer">
                         <span>{a.category}</span>
@@ -184,7 +192,7 @@ export default function Market() {
               </div>
               <Panel
                 title="The complete sample universe"
-                subtitle="Prices are synthetic. ESG values are simulated assumptions."
+                subtitle={source === "real" ? "Adjusted historical prices. ESG values are illustrative assumptions." : "Prices are synthetic. ESG values are simulated assumptions."}
               >
                 <div
                   className="table-scroll"
@@ -200,6 +208,7 @@ export default function Market() {
                         <th>Sample end price</th>
                         <th>Period return</th>
                         <th>Illustrative ESG</th>
+                        {<th>Annualized volatility</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -237,17 +246,24 @@ export default function Market() {
                               {a.illustrative_esg}/100 · illustrative
                             </span>
                           </td>
+                          {<td>{a.annualized_volatility.toFixed(2)}%</td>}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </Panel>
+              {d.correlation && <Panel title={source === "real" ? "Daily return correlations" : "Monthly return correlations"} subtitle="Pearson correlations on common observed returns; constant cash correlations are undefined.">
+                <div className="table-scroll" tabIndex={0} role="region" aria-label="Return correlation matrix"><table>
+                  <thead><tr><th>Asset</th>{d.assets.map(a => <th key={a.symbol}>{a.symbol}</th>)}</tr></thead>
+                  <tbody>{d.assets.map(a => <tr key={a.symbol}><th>{a.symbol}</th>{d.assets.map(b => <td key={b.symbol}>{d.correlation[a.symbol][b.symbol] == null ? 'N/A' : d.correlation[a.symbol][b.symbol].toFixed(3)}</td>)}</tr>)}</tbody>
+                </table></div>
+              </Panel>}
               <details className="methodology">
                 <summary>About this dataset</summary>
                 <p>
                   {d.data_label}. Returns are calculated from the first and last
-                  synthetic prices. Filters change visibility only; they do not
+                  adjusted or synthetic prices according to the selected source. Filters change visibility only; they do not
                   alter the data, portfolio holdings or calculation period. ESG
                   is a manually chosen assumption with no vendor provenance.
                 </p>

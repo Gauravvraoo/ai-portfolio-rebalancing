@@ -9,7 +9,7 @@ import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from app.rl.config import ExperimentConfig, PPO_SETTINGS
-from app.rl.data import splits
+from app.rl.data import splits, manifest
 from app.rl.environment import PortfolioEnv
 from app.rl.storage import read, write, now
 
@@ -56,6 +56,8 @@ def run(path, operation):
     config = ExperimentConfig(**job["config"])
     dataset = np.load(path / "dataset.npz", allow_pickle=False)
     prices, dates = dataset["prices"], dataset["dates"]
+    if manifest(dates, prices)["sha256"] != job["data"]["sha256"]:
+        raise ValueError("Experiment dataset checksum mismatch")
     intervals = splits(len(dates))
     torch.set_num_threads(1)
     job.update(

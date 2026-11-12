@@ -33,7 +33,7 @@ def run(path):
                 raise ValueError("Model checksum mismatch")
             models[agent] = PPO.load(file, device="cpu")
     result = backtest(
-        dates, prices, BacktestConfig(**job["config"]), job["training_config"], models
+        dates, prices, BacktestConfig(**job["config"]), job["training_config"], models, job["data"]
     )
     result.update(
         id=job["id"],

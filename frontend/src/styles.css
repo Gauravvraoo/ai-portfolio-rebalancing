@@ -3272,3 +3272,7 @@ footer strong {
   outline: 2px solid #8daaff;
   outline-offset: -3px;
 }
+
+.source-controls { padding: 18px; margin-bottom: 24px; }
+.source-controls .config-fields { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.source-controls p { margin: 12px 0 0; font-size: 12px; line-height: 1.7; }

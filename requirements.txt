@@ -1,1 +1,2 @@
+# Includes yfinance for optional adjusted historical market data.
 -r backend/requirements.txt

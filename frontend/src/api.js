@@ -31,7 +31,7 @@ export async function request(path, options = {}) {
   }
 }
 
-export function useApi(path) {
+export function useApi(path, timeoutMs = 15000) {
   const [data, setData] = useState(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export function useApi(path) {
         active = false;
       };
     }
-    request(path, { signal: controller.signal })
+    request(path, { signal: controller.signal, timeoutMs })
       .then((d) => {
         if (active) setData(d);
       })
@@ -64,7 +64,7 @@ export function useApi(path) {
       active = false;
       controller.abort();
     };
-  }, [path, version]);
+  }, [path, version, timeoutMs]);
   return { data, error, loading, retry };
 }
 

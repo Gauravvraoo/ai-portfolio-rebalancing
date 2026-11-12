@@ -12,3 +12,4 @@ playwright-report/
 test-results/
 backend/experiments/
 backend/backtests/
+backend/data/market_cache/

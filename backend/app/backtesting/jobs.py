@@ -16,7 +16,8 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 from app.rl import jobs as training_jobs
 from app.rl.config import ExperimentConfig
-from app.rl.data import load_data, manifest, ESG
+from app.rl.data import manifest, ESG, load_data, SYMBOLS
+from app.market_data.service import dataset, source_of
 from app.rl.constraints import Constraints
 from app.rl.storage import now, read, write
 from app.backtesting.config import BacktestConfig
@@ -117,9 +118,16 @@ def prepare(config):
                 409,
                 "Selected experiment dataset checksum differs from training; comparison rejected",
             )
+        provenance = job["data"]
+        if provenance.get("symbols") != list(SYMBOLS):
+            raise HTTPException(409, "Experiment asset universe is incompatible with this application")
+        if source_of(provenance) != config.data_source:
+            raise HTTPException(409, "Dataset source mismatch: select an experiment trained on the selected source")
+        if config.data_source == "real" and provenance.get("data_range") != config.data_range:
+            raise HTTPException(409, "Dataset range mismatch: use the experiment's original range and immutable snapshot")
         training_config = job["config"]
     else:
-        dates, prices = load_data()
+        dates, prices, provenance = dataset(config)
     try:
         settings = dict(training_config or {})
         settings["min_esg"] = config.min_esg
@@ -128,7 +136,7 @@ def prepare(config):
         interval(dates, config)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
-    return dates, prices, training_config, source
+    return dates, prices, training_config, source, provenance
 
 
 @router.post("", status_code=202)
@@ -136,7 +144,7 @@ def create(config: BacktestConfig):
     with lock:
         if any(j["status"] in {"queued", "running"} for j in summaries()):
             raise HTTPException(409, "A backtest is active; wait for completion")
-        dates, prices, training_config, source = prepare(config)
+        dates, prices, training_config, source, provenance = prepare(config)
         identifier = str(uuid.uuid4())
         path = ROOT / identifier
         path.mkdir(parents=True)
@@ -155,7 +163,7 @@ def create(config: BacktestConfig):
             "updated_at": now(),
             "config": config.model_dump(mode="json"),
             "training_config": training_config,
-            "data": manifest(dates, prices),
+            "data": provenance,
             "model_sha256": hashes,
         }
         write(path / "job.json", job)
@@ -208,9 +216,22 @@ def export(
             },
         )
     output = io.StringIO(newline="")
-    label = "SYNTHETIC PRICES; ILLUSTRATIVE ESG"
+    data = result['data']
+    label = ("REAL HISTORICAL ADJUSTED PRICES" if source_of(data) == 'real' else "SYNTHETIC PRICES") + "; ILLUSTRATIVE ESG; EDUCATIONAL BACKTESTING ONLY, NOT INVESTMENT ADVICE"
+    provenance = {
+        'data_source': source_of(data), 'provider': data.get('provider', 'Repository fixture'),
+        'data_range': data.get('data_range', 'fixture'),
+        'training_configuration': json.dumps(result.get('training_config'), sort_keys=True),
+        'allocation_bounds': json.dumps(result.get('allocation_bounds'), sort_keys=True),
+        'asset_universe': '|'.join(result['symbols']),
+        'dataset_start': data.get('start_date', ''), 'dataset_end': data.get('end_date', ''),
+        'price_adjustment': data.get('price_adjustment', 'Synthetic'),
+        'dataset_sha256': data['sha256'], 'fetched_at': data.get('fetched_at', ''),
+        'backtest_configuration': json.dumps(result['config'], sort_keys=True),
+    }
     if kind == "summary":
         fields = [
+            *provenance,
             "data_assumption",
             "strategy",
             "start_close",
@@ -225,6 +246,7 @@ def export(
         for strategy in result["results"]:
             writer.writerow(
                 {
+                    **provenance,
                     "data_assumption": label,
                     "strategy": strategy["name"],
                     "start_close": result["period"]["start_close"],
@@ -237,6 +259,7 @@ def export(
             )
     else:
         fields = [
+            *provenance,
             "data_assumption",
             "strategy",
             "date",
@@ -256,6 +279,7 @@ def export(
             for row in strategy["history"]:
                 writer.writerow(
                     {
+                        **provenance,
                         "data_assumption": label,
                         "strategy": strategy["name"],
                         **{

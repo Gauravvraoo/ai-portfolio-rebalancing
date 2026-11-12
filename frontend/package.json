@@ -12,7 +12,8 @@
     "test:backtesting": "node scripts/backtesting-smoke.cjs",
     "test": "node --test tests/*.test.js",
     "test:gui": "node scripts/gui-smoke.cjs",
-    "test:integration": "node scripts/integration-smoke.cjs"
+    "test:integration": "node scripts/integration-smoke.cjs",
+    "test:real-market": "node scripts/real-market-smoke.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.511.0",

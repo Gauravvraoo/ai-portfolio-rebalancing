@@ -42,7 +42,7 @@ def scheduled(dates, start, t, frequency):
     return (previous.year, previous.month) != (current.year, current.month)
 
 
-def backtest(dates, prices, config, training_config=None, models=None):
+def backtest(dates, prices, config, training_config=None, models=None, provenance=None):
     start, end = interval(dates, config)
     settings = dict(training_config or {})
     settings.update(
@@ -129,7 +129,7 @@ def backtest(dates, prices, config, training_config=None, models=None):
         )
     return {
         "config": config.model_dump(mode="json"),
-        "data": manifest(dates, prices),
+        "data": manifest(dates, prices, provenance),
         "period": {
             "start_close": str(dates[start]),
             "first_return_end": str(dates[start + 1]),
@@ -142,5 +142,5 @@ def backtest(dates, prices, config, training_config=None, models=None):
             "max": env_config.max_weights,
         },
         "results": results,
-        "methodology": "Synthetic prices and illustrative ESG. Known-close decisions earn next-close returns. All strategies use the same test interval, initial cash, cash yield and self-financing half-L1 traded-notional costs, including cash. Buy & hold trades only initially; others follow the selected calendar frequency. ESG floor applies only to Responsible PPO unless the all-strategy overlay is enabled. Constraints apply at trades, not between them. No retraining or test-based checkpoint selection. Changed inference settings can differ from PPO training. Metrics annualize at 252 periods; ratios with zero denominators are null. Annualization of short samples is extrapolation.",
+        "methodology": "Historical replay with illustrative ESG (not verified ratings); educational only, not investment advice. Dataset provenance is recorded separately. Known-close decisions earn next-close returns. All strategies use the same test interval, initial cash, cash yield and self-financing half-L1 traded-notional costs, including cash. Buy & hold trades only initially; others follow the selected calendar frequency. ESG floor applies only to Responsible PPO unless the all-strategy overlay is enabled. Constraints apply at trades, not between them. No retraining or test-based checkpoint selection. Changed inference settings can differ from PPO training. Metrics annualize at 252 periods; ratios with zero denominators are null. Annualization of short samples is extrapolation.",
     }

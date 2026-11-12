@@ -9,7 +9,7 @@ import numpy as np
 from fastapi import APIRouter, HTTPException
 from app.rl import storage
 from app.rl.config import ExperimentConfig, PPO_SETTINGS
-from app.rl.data import load_data, manifest
+from app.market_data.service import DataSelection, dataset
 
 router = APIRouter(prefix="/api/training", tags=["reinforcement learning"])
 lock = threading.Lock()
@@ -76,9 +76,13 @@ def launch(path, operation):
 
 
 @router.get("/data")
-def data_description():
-    dates, prices = load_data()
-    return manifest(dates, prices)
+def data_description(data_source: str = "synthetic", data_range: str = "3Y"):
+    from fastapi import HTTPException
+    try:
+        selection = DataSelection(data_source=data_source, data_range=data_range)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return dataset(selection)[2]
 
 
 @router.get("/jobs")
@@ -90,7 +94,7 @@ def list_jobs():
 def train(config: ExperimentConfig):
     with lock:
         ensure_idle()
-        dates, prices = load_data()
+        dates, prices, provenance = dataset(config)
         job_id = str(uuid.uuid4())
         path = storage.ROOT / job_id
         path.mkdir(parents=True)
@@ -108,7 +112,7 @@ def train(config: ExperimentConfig):
                 **PPO_SETTINGS,
             },
             "agent_seeds": {"profit": config.seed, "responsible": config.seed + 1},
-            "data": manifest(dates, prices),
+            "data": provenance,
             "timesteps_per_agent": config.timesteps,
             "agents": {},
         }

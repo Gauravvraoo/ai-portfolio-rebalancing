@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import csv
 import io
 import subprocess
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, model_validator
@@ -13,6 +13,9 @@ from app.backtesting.jobs import router as backtesting_router
 from app.rl import jobs as training_jobs
 from app.backtesting import jobs as backtest_jobs
 from app.rl.storage import read, write, now
+from app.market_data.service import DataSelection, dataset
+from app.market_data.analysis import summarize, correlations
+import numpy as np
 
 @asynccontextmanager
 async def lifespan(app):
@@ -73,9 +76,25 @@ def portfolio():
     return simulate()
 
 @app.get("/api/market")
-def market_data():
+def market_data(data_source: str = "synthetic", data_range: str = "3Y",
+                refresh: bool = False,
+                cash_annual_return: float = Query(0.02, ge=0, le=0.2, allow_inf_nan=False)):
+    try:
+        selection = DataSelection(data_source=data_source, data_range=data_range)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    if selection.data_source == 'real':
+        dates, prices, provenance = dataset(selection, refresh=refresh)
+        return summarize(dates, prices, provenance, cash_annual_return)
     assets, dates, prices = market()
-    return {"assets": assets, "history": [{"date": d, **{a["symbol"]: (prices[d, a["symbol"]] / prices[dates[0], a["symbol"]] - 1) * 100 for a in assets}} for d in dates], "data_label": "Synthetic sample prices; illustrative ESG, not vendor ratings"}
+    values = np.array([[prices[d, a['symbol']] for a in assets] for d in dates])
+    returns = values[1:] / values[:-1] - 1
+    for i, asset in enumerate(assets):
+        asset['annualized_volatility'] = float(returns[:, i].std(ddof=1) * np.sqrt(12) * 100)
+    return {"assets": assets, "history": [{"date": d, **{a["symbol"]: (prices[d, a["symbol"]] / prices[dates[0], a["symbol"]] - 1) * 100 for a in assets}} for d in dates],
+            "data_label": "Synthetic sample prices; illustrative ESG, not vendor ratings",
+            "data": {"data_source": "synthetic", "provider": "Repository monthly fixture", "start_date": dates[0], "end_date": dates[-1], "price_adjustment": "Synthetic monthly prices; baseline CASH earns zero interest"},
+            "correlation": correlations(returns), "frequency": "monthly"}
 
 @app.post("/api/simulate")
 def simulation(allocation: Allocation):

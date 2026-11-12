@@ -19,6 +19,8 @@ import {
 } from "recharts";
 import { request } from "../api";
 import { Panel, money } from "../components/UI";
+import { useDataSource, Provenance } from "../components/DataSource";
+import { compatibleExperiment, sourceName } from "../lib/dataSource";
 const palette = [
   "#648cff",
   "#39c8bc",
@@ -102,6 +104,7 @@ function SeriesChart({ rows, strategies, field }) {
   );
 }
 export default function Backtesting({ baseline }) {
+  const { source, range, cashYield } = useDataSource();
   const [search] = useSearchParams();
   const [tab, setTab] = useState("advanced"),
     [options, setOptions] = useState(null),
@@ -132,6 +135,9 @@ export default function Backtesting({ baseline }) {
     start_date: "",
     end_date: "",
   });
+  useEffect(() => {
+    setConfig(c => ({ ...c, experiment_id: "", start_date: "", end_date: "", cash_annual_return: cashYield }));
+  }, [source, range, cashYield]);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -232,6 +238,8 @@ export default function Backtesting({ baseline }) {
     try {
       const payload = {
         ...config,
+        data_source: source,
+        data_range: range,
         experiment_id: config.experiment_id || null,
         start_date: config.start_date || null,
         end_date: config.end_date || null,
@@ -240,6 +248,7 @@ export default function Backtesting({ baseline }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        timeoutMs: 120000,
       });
       setJobs((j) => [next, ...j]);
       setId(next.id);
@@ -330,12 +339,10 @@ export default function Backtesting({ baseline }) {
           <div className="notice">
             <FlaskConical size={17} />
             <span>
-              Synthetic prices and illustrative ESG assumptions only. Results
-              are computed from historical-style replay, not real-market
-              performance. Select a trained experiment to include both PPO
-              policies.
+              New run source: {sourceName(source)}. Select a compatible trained experiment to include both PPO policies. All strategies replay its exact immutable dataset and held-out period, not refreshed quotes. ESG scores are illustrative, not verified ratings.
             </span>
           </div>
+          {job?.data && <Provenance data={job.data} />}
           {(error || metaError || pollError) && (
             <div className="notice negative" role="alert">
               {error || metaError || pollError}
@@ -372,16 +379,16 @@ export default function Backtesting({ baseline }) {
                       <option value="">
                         Benchmarks only · no trained models required
                       </option>
-                      {options?.experiments.map((e) => (
+                      {options?.experiments.filter(e => compatibleExperiment(e, source, range)).map((e) => (
                         <option key={e.id} value={e.id}>
-                          {e.id.slice(0, 8)} · {e.mode} · seed {e.config.seed}
+                          {e.id.slice(0, 8)} · {sourceName(e.data?.data_source)} · {e.mode} · seed {e.config.seed}
                         </option>
                       ))}
                     </select>
                   </label>
-                  {!options?.experiments.length && (
+                  {!options?.experiments.some(e => compatibleExperiment(e, source, range)) && (
                     <p className="training-note muted">
-                      No trained agents available.{" "}
+                      No compatible trained agents for this source/range.{" "}
                       <Link className="text-link" to="/training">
                         Train both agents in the AI lab
                       </Link>{" "}

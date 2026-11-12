@@ -2,13 +2,14 @@
 
 Phases 1–5 of a B.Tech CSE final-year project: an educational portfolio simulation application. React + Vite + Tailwind CSS + Recharts frontend, FastAPI backend, and SQLite storage.
 
-**No live trading, actual market quotes or vendor ESG ratings.** Portfolio results are computed from explicitly synthetic sample prices. Phase 2 trains genuine Gymnasium/Stable-Baselines3 PPO agents; their results demonstrate software behavior, not real-market investment performance.
+**No live trading, streaming quotes or verified vendor ESG ratings.** Synthetic Demo remains the default. Optional **Real Historical Market Data** downloads split/dividend-adjusted daily ETF closes from Yahoo Finance via yfinance. Prices are historical observations, never advertised as live. PPO uses genuine Gymnasium/Stable-Baselines3 models; research results do not establish future investment performance.
 
 ## Requirements
 
 - Python 3.11–3.12 (verified with Python 3.12; use a version supported by the pinned PyTorch wheels)
 - Node.js 22+ and npm (verified with Node 24)
-- Two terminals; no API keys or external services required
+- Two terminals, or the Windows launcher after dependency installation
+- No API keys required; real historical mode requires outbound HTTPS access to Yahoo Finance. Synthetic Demo works offline after installation.
 
 ## Run on Windows PowerShell
 
@@ -172,7 +173,7 @@ frontend/
   src/styles.css             Tailwind and dashboard design system
 ```
 
-Future work: sourced adjusted historical data with provenance, walk-forward evaluation, benchmark-relative attribution, hard risk limits and production job infrastructure. PPO jobs are already separate from HTTP request handling; do not interpret synthetic training outcomes as evaluated real-world predictions.
+Future work: point-in-time licensed data, walk-forward evaluation, benchmark-relative attribution, hard risk limits and production job infrastructure. PPO jobs are already separate from HTTP request handling; do not interpret synthetic training outcomes as evaluated real-world predictions.
 
 Each cloud task already has an isolated checkout; use the existing checkout rather than creating a worktree unless requested. Restart both backend and frontend processes after restoring a cloud snapshot.
 
@@ -480,3 +481,55 @@ npm run test:integration
 ```
 
 Set `CHROMIUM_PATH=/usr/bin/chromium` when using system Chromium on Linux. In restricted cloud filesystems, `npm ci --cache /tmp/verdant-npm-cache` uses a writable cache. The GUI suite accepts `SCREENSHOT_DIR` to keep generated screenshots outside tracked documentation. See [Phase 5 validation](docs/phase5-validation.md) for results and limitations.
+
+
+## Real Historical Market Data mode
+
+The Windows launcher and manual startup commands remain unchanged. Refresh dependencies once after switching branches:
+
+```powershell
+# Repository root; keep the existing .venv and saved artifacts.
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+npm ci --prefix frontend
+.\START_PROJECT.bat
+```
+
+Root `requirements.txt` includes `backend/requirements.txt`, which pins `yfinance==0.2.65`. The CPU PyTorch installation and Python 3.11–3.12 / Node 22+ requirements above still apply for a fresh Windows setup. No API token is needed. Do not delete your database, experiments or backtests to upgrade. Both launcher source files are unchanged on this branch. Windows-specific execution still requires local verification.
+
+### Use it in the existing GUI
+
+1. At the top of any page, choose **Synthetic Demo** or **Real Historical Market Data**. The selected source persists in browser storage. Real mode offers **1Y / 3Y / 5Y** trailing calendar-year requests. Synthetic fixtures retain their original fixed dates; ranges are disabled for that mode.
+2. Open **Market Analysis**. Real mode displays normalized adjusted returns, adjusted last closes, sample annualized daily volatility and a common-calendar Pearson correlation matrix. Provider, returned date range, last available trading date and retrieval timestamp identify the data. Undefined CASH correlations show N/A. The explicit cash-yield control supplies the market cash series and defaults for new research jobs; individual training/backtest forms retain their editable assumptions.
+3. **Refresh market data** requests updated prices. The cache lasts six hours; repeated clicks/requests within 60 seconds reuse the freshly fetched snapshot. Rate limits and provider failures have a 60-second cooldown, return 429/503 plus Retry-After, and show recoverable errors. Stale/failed real requests never fall back to synthetic prices. Switch to Synthetic Demo explicitly to continue offline.
+4. Open **AI Agent Training** with the intended source/range selected, review costs/cash/ESG/bounds and train. Each experiment stores an immutable price snapshot, SHA-256, source/provider, symbols, requested/actual dates, adjustment convention, retrieval time, exact chronological split boundaries, PPO settings and execution assumptions. Evaluate explicitly after training. Old saved experiments have no source field and are treated as synthetic; they are never relabeled as real.
+5. Open **Strategy Comparison**. Its PPO selector filters by source and, for real data, original requested range. Choose an experiment for all six strategies. The server also rejects mismatches. All six strategies use the experiment's exact snapshot and held-out interval, even if market prices have since refreshed or Yahoo revised old prices. An experiment-free run uses four benchmarks on the selected source's held-out test interval. Bounds come from the selected training configuration; costs, cash yield, calendar frequency, ESG overlay and selected test subperiod are explicit and shared by all strategies. Changing inference assumptions is exploratory and does not retrain the models.
+6. **Dashboard** retains its labeled monthly synthetic baseline KPIs and allocation studio. In real mode it additionally shows active historical dataset provenance. Daily backtest activity is separately labeled by its saved run's source. **Reports** exports the selected saved result, regardless of current global source; advanced JSON/CSV includes source, universe, actual dates, adjustment, dataset checksum, full backtest configuration and educational disclaimers. Experiment JSON includes the saved training configuration/provenance. The original baseline CSV and simulation remain synthetic.
+
+### Provider and calculation contract
+
+- Provider: Yahoo Finance through yfinance, `Ticker.history(interval="1d", auto_adjust=True)`. Four actual tickers only: **SPY, AGG, GLD, QQQ**. Adjusted Close incorporates Yahoo/yfinance split/dividend adjustments; dividends are not added again. Yahoo historical adjustments may be revised and are not point-in-time research data. Provider availability, terms, delays and rate limits apply; there is no streaming feed or availability guarantee.
+- Calendar: intersect observed ETF dates and drop incomplete rows. Never forward/backfill prices. Exclude the current UTC date from downloads to avoid partial daily bars; last returned date can therefore lag today's completed local session. At least 150 complete positive daily closes are required. Retrieval timestamp is not a quote timestamp; no intraday quote timestamp is claimed.
+- Normalized asset return: `(adjusted_close / first_adjusted_close - 1) * 100`. Volatility uses sample daily return standard deviation times sqrt(252). Correlations use those same aligned returns. Monthly demo statistics use sqrt(12) and the original monthly fixture.
+- **CASH is an account, never a Yahoo ticker.** Stored snapshot price is 1; the shared execution engine overrides its return with `(1 + annual_yield) ** (1/252) - 1` per observed session. Default assumed annual yield is 2%; range 0–20%. Market Analysis compounds the same assumption. No calendar-day interest, sourced deposit rate or Treasury yield is implied. The legacy monthly baseline still earns zero cash interest. Annualization uses 252 observed periods and can be unstable on short held-out samples.
+- Chronology: trailing 20-return warmup, then 60% train / 20% validation / 20% test realized returns. Actions at known close t earn t→t+1 returns. Earlier history may supply trailing context; realized returns never overlap splits. Test prices are not passed into training environments or checkpoint scoring. Validation selects checkpoints, explicit evaluation alone uses test returns. Repeated test evaluation/tuning is exploratory and invalidates an untouched-holdout claim. All strategies use known history, including pre-test context for rolling estimates.
+- ESG scores remain static illustrative assumptions (SPY 68, AGG 73, GLD 45, QQQ 64, CASH 50). They are not independently verified company or fund ratings. Constraints apply at trading targets; drift can temporarily exceed them. Existing soft risk penalties and all accounting conventions remain unchanged.
+- Prices cache under ignored `backend/data/market_cache/` (override with absolute `PORTFOLIO_MARKET_CACHE_DIR`). Research snapshots remain in their existing experiment/backtest folders. Cache refresh never rewrites saved models, snapshots or completed results. Single API-worker operation remains required.
+
+### Network and validation
+
+Yahoo access may require `fc.yahoo.com`, `query1.finance.yahoo.com`, `query2.finance.yahoo.com` and `finance.yahoo.com`. TLS verification remains enabled. This cloud environment denied the first provider request with HTTP CONNECT 403. Required host additions were saved as an environment-settings draft, not applied/published access. Review/save and publish those settings before retrying a fresh Yahoo request here. A local Windows installation uses its own network policy.
+
+Tests distinguish provider fixtures from actual external downloads. Run backend pytest, frontend unit tests and build as above. For an explicit isolated browser test with no external Yahoo dependency:
+
+```bash
+# Repository root, terminal 1. Uses temporary DB/cache/models/results only.
+.venv/bin/python backend/scripts/run_market_fixture_server.py
+# Terminal 2
+npm run dev --prefix frontend -- --port 5173 --strictPort
+# Terminal 3, from frontend (system Chromium example)
+CHROMIUM_PATH=/usr/bin/chromium npm run test:real-market
+```
+
+PowerShell uses `.\.venv\Scripts\python.exe` for the harness, and `npm run test:real-market` from `frontend` after installing Playwright Chromium (`npx playwright install chromium`). Stop existing servers first. The harness prints **Controlled provider fixture** and never enables itself during normal app/launcher startup. Its tests run actual PPO optimization/evaluation and six-strategy backend replay on controlled prices; they do **not** prove a Yahoo download succeeded. The browser suite can also target the normally started backend when Yahoo is accessible; it prints the provider used. Existing smoke/training/backtesting/GUI suites continue to exercise Synthetic Demo.
+
+Implementation evidence and test boundaries: [real-market validation](docs/real-market-validation.md).

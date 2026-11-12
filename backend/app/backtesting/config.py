@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 class BacktestConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    data_source: Literal["synthetic", "real"] = "synthetic"
+    data_range: Literal["1Y", "3Y", "5Y"] = "3Y"
     experiment_id: UUID | None = None
     initial_capital: float = Field(default=100000, ge=100, le=1e9)
     rebalance_frequency: Literal["daily", "weekly", "monthly"] = "weekly"

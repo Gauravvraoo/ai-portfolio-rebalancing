@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { request } from "../api";
 import { Panel, PerformanceChart, money, pct } from "../components/UI";
+import { useDataSource, Provenance } from "../components/DataSource";
+import { sourceName } from "../lib/dataSource";
 const symbols = ["SPY", "AGG", "GLD", "QQQ", "CASH"];
 const names = { profit: "Profit PPO", responsible: "Responsible PPO" };
 const active = new Set(["queued", "running", "evaluating"]);
@@ -57,6 +59,7 @@ function Curve({ rows, validation = false }) {
   );
 }
 export default function Training() {
+  const { source, range, cashYield } = useDataSource();
   const [jobs, setJobs] = useState([]),
     [id, setId] = useState(""),
     [data, setData] = useState(null),
@@ -80,6 +83,8 @@ export default function Training() {
     max_weights: [0.6, 0.6, 0.6, 0.6, 0.6],
   });
   useEffect(() => {
+    setLoading(true);
+    setData(null);
     const controller = new AbortController();
     let stopped = false;
     let timer;
@@ -87,7 +92,7 @@ export default function Training() {
       try {
         const [list, description] = await Promise.all([
           request("training/jobs", { signal: controller.signal }),
-          request("training/data", { signal: controller.signal }),
+          request(`training/data?data_source=${source}&data_range=${range}`, { signal: controller.signal, timeoutMs: 120000 }),
         ]);
         if (!stopped) {
           setJobs(list);
@@ -110,7 +115,10 @@ export default function Training() {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [refresh]);
+  }, [refresh, source, range]);
+  useEffect(() => {
+    setConfig(c => ({ ...c, cash_annual_return: cashYield }));
+  }, [cashYield]);
   const selected = jobs.find((j) => j.id === id) || jobs[0];
   const running = jobs.some((j) => active.has(j.status));
   const stale = Boolean(pollError);
@@ -125,7 +133,8 @@ export default function Training() {
       const job = await request("training/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({ ...config, data_source: source, data_range: range }),
+        timeoutMs: 120000,
       });
       setJobs((j) => [job, ...j]);
       setId(job.id);
@@ -174,8 +183,7 @@ export default function Training() {
       <div className="notice">
         <BrainCircuit size={18} />
         <span>
-          Real Gymnasium + Stable-Baselines3 PPO, using seeded synthetic daily
-          prices. ESG scores and cash yield are simulated assumptions. Quick
+          Genuine Gymnasium + Stable-Baselines3 PPO using {sourceName(source)}. ESG scores and cash yield are illustrative assumptions. Quick
           mode verifies the pipeline; it does not establish investment
           performance.
         </span>
@@ -322,7 +330,7 @@ export default function Training() {
                     >
                       {jobs.map((j) => (
                         <option value={j.id} key={j.id}>
-                          {new Date(j.created_at).toLocaleString()} · {j.status}{" "}
+                          {sourceName(j.data?.data_source)} · {new Date(j.created_at).toLocaleString()} · {j.status}{" "}
                           · {j.id.slice(0, 8)}
                         </option>
                       ))}
@@ -338,6 +346,7 @@ export default function Training() {
                         : selected.config.mode + " mode"}
                     </span>
                   </div>
+                  <Provenance data={selected.data} />
                   <code className="job-id">{selected.id}</code>
                   {selected.error && (
                     <p className="negative" role="alert">
@@ -393,6 +402,7 @@ export default function Training() {
               subtitle={`${data.observations} observations · trailing 20-day warmup`}
             >
               <div className="training-body">
+                <Provenance data={data} />
                 <p className="muted training-note">{data.label}</p>
                 {Object.entries(data.splits).map(([name, split]) => (
                   <div className="split-row" key={name}>

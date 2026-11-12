@@ -126,7 +126,7 @@ const os = require("node:os");
       .slice(-5)
       .reverse();
     await activity
-      .getByText(`Run ${latest.id.slice(0, 8)} · synthetic daily data`)
+      .getByText(`Run ${latest.id.slice(0, 8)} · Synthetic Demo`)
       .waitFor();
     assert.equal(
       await activity.locator(".activity-item").count(),
