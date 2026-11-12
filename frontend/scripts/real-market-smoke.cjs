@@ -17,6 +17,11 @@ const AxeBuilder = require('@axe-core/playwright').default;
     await page.getByLabel('Data source', { exact: true }).selectOption('real');
     let market = await (await loaded).json();
     assert.equal(market.data.data_source, 'real');
+    if (process.env.EXPECT_CONFIGURED_FALLBACK === '1') {
+      assert.equal(market.data.provider_id, 'tiingo');
+      assert.equal(market.data.fallback_used, true);
+      await page.getByText(/Explicitly configured provider fallback used/).waitFor();
+    }
     assert(market.data.fetched_at && market.data.last_trading_date);
     console.log(`Provider used for browser validation: ${market.data.provider}`);
     await page.getByRole('heading', { name: 'Daily return correlations' }).waitFor();

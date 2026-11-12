@@ -8,4 +8,4 @@ gymnasium==1.1.1
 stable-baselines3==2.6.0
 torch==2.6.0
 scipy==1.15.3
-yfinance==0.2.65
+yfinance==1.8.0

@@ -9,7 +9,7 @@ Phases 1–5 of a B.Tech CSE final-year project: an educational portfolio simula
 - Python 3.11–3.12 (verified with Python 3.12; use a version supported by the pinned PyTorch wheels)
 - Node.js 22+ and npm (verified with Node 24)
 - Two terminals, or the Windows launcher after dependency installation
-- No API keys required; real historical mode requires outbound HTTPS access to Yahoo Finance. Synthetic Demo works offline after installation.
+- Synthetic Demo and Yahoo need no API key; optional Tiingo requires an API key and suitable data access. Historical providers require outbound HTTPS. Synthetic Demo works offline after installation.
 
 ## Run on Windows PowerShell
 
@@ -494,13 +494,13 @@ npm ci --prefix frontend
 .\START_PROJECT.bat
 ```
 
-Root `requirements.txt` includes `backend/requirements.txt`, which pins `yfinance==0.2.65`. The CPU PyTorch installation and Python 3.11–3.12 / Node 22+ requirements above still apply for a fresh Windows setup. No API token is needed. Do not delete your database, experiments or backtests to upgrade. Both launcher source files are unchanged on this branch. Windows-specific execution still requires local verification.
+Root `requirements.txt` includes `backend/requirements.txt`, which pins `yfinance==1.8.0`. The CPU PyTorch installation and Python 3.11–3.12 / Node 22+ requirements above still apply for a fresh Windows setup. The default Yahoo provider needs no API token; optional Tiingo setup is documented below. Do not delete your database, experiments or backtests to upgrade. Both launcher source files are unchanged on this branch. Windows-specific execution still requires local verification.
 
 ### Use it in the existing GUI
 
 1. At the top of any page, choose **Synthetic Demo** or **Real Historical Market Data**. The selected source persists in browser storage. Real mode offers **1Y / 3Y / 5Y** trailing calendar-year requests. Synthetic fixtures retain their original fixed dates; ranges are disabled for that mode.
 2. Open **Market Analysis**. Real mode displays normalized adjusted returns, adjusted last closes, sample annualized daily volatility and a common-calendar Pearson correlation matrix. Provider, returned date range, last available trading date and retrieval timestamp identify the data. Undefined CASH correlations show N/A. The explicit cash-yield control supplies the market cash series and defaults for new research jobs; individual training/backtest forms retain their editable assumptions.
-3. **Refresh market data** requests updated prices. The cache lasts six hours; repeated clicks/requests within 60 seconds reuse the freshly fetched snapshot. Rate limits and provider failures have a 60-second cooldown, return 429/503 plus Retry-After, and show recoverable errors. Stale/failed real requests never fall back to synthetic prices. Switch to Synthetic Demo explicitly to continue offline.
+3. **Refresh market data** requests updated prices. The cache lasts six hours; repeated clicks/requests within 60 seconds reuse the freshly fetched snapshot. Rate limits have a provider-wide minimum 300-second cooldown and other failures a 60-second request cooldown, return 429/503 plus Retry-After, and show recoverable errors. Stale/failed real requests never fall back to synthetic prices. Switch to Synthetic Demo explicitly to continue offline.
 4. Open **AI Agent Training** with the intended source/range selected, review costs/cash/ESG/bounds and train. Each experiment stores an immutable price snapshot, SHA-256, source/provider, symbols, requested/actual dates, adjustment convention, retrieval time, exact chronological split boundaries, PPO settings and execution assumptions. Evaluate explicitly after training. Old saved experiments have no source field and are treated as synthetic; they are never relabeled as real.
 5. Open **Strategy Comparison**. Its PPO selector filters by source and, for real data, original requested range. Choose an experiment for all six strategies. The server also rejects mismatches. All six strategies use the experiment's exact snapshot and held-out interval, even if market prices have since refreshed or Yahoo revised old prices. An experiment-free run uses four benchmarks on the selected source's held-out test interval. Bounds come from the selected training configuration; costs, cash yield, calendar frequency, ESG overlay and selected test subperiod are explicit and shared by all strategies. Changing inference assumptions is exploratory and does not retrain the models.
 6. **Dashboard** retains its labeled monthly synthetic baseline KPIs and allocation studio. In real mode it additionally shows active historical dataset provenance. Daily backtest activity is separately labeled by its saved run's source. **Reports** exports the selected saved result, regardless of current global source; advanced JSON/CSV includes source, universe, actual dates, adjustment, dataset checksum, full backtest configuration and educational disclaimers. Experiment JSON includes the saved training configuration/provenance. The original baseline CSV and simulation remain synthetic.
@@ -533,3 +533,75 @@ CHROMIUM_PATH=/usr/bin/chromium npm run test:real-market
 PowerShell uses `.\.venv\Scripts\python.exe` for the harness, and `npm run test:real-market` from `frontend` after installing Playwright Chromium (`npx playwright install chromium`). Stop existing servers first. The harness prints **Controlled provider fixture** and never enables itself during normal app/launcher startup. Its tests run actual PPO optimization/evaluation and six-strategy backend replay on controlled prices; they do **not** prove a Yahoo download succeeded. The browser suite can also target the normally started backend when Yahoo is accessible; it prints the provider used. Existing smoke/training/backtesting/GUI suites continue to exercise Synthetic Demo.
 
 Implementation evidence and test boundaries: [real-market validation](docs/real-market-validation.md).
+
+
+## Historical-provider troubleshooting and Tiingo alternative
+
+The original Windows message grouped access denials, rate limits, missing data and parsing problems together. The fix adds request IDs, distinct error codes and structured JSON diagnostic logs, and upgrades the pinned yfinance dependency to **1.8.0**. Its supported `yf.config.debug.hide_exceptions=False` setting exposes failures during timezone/bootstrap lookup as well as price retrieval; the old `history(raise_errors=True)` setting did not reliably expose the former. SDK debug dumps are suppressed in favor of safe application diagnostics. An upgrade cannot override Yahoo or proxy access restrictions.
+
+First stop the launcher normally with Q/Ctrl+C, update dependencies, and restart:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\START_PROJECT.bat
+```
+
+If Market Analysis fails, the visible error now includes provider, symbol, reason code, corrective guidance and a request ID. The failed HTTP response includes a structured `diagnostics` object. Inspect the safe local diagnostic endpoint in a second terminal:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8000/api/market/diagnostics" |
+    ConvertTo-Json -Depth 8
+```
+
+This endpoint does **not** contact providers. It reports provider configuration, installed Python/yfinance versions, whether a Tiingo key/proxy/custom CA is present, and recent safe failures. It never returns keys, proxy addresses/credentials, raw response bodies or request headers. Launcher logs remain under the printed `%TEMP%\verdant-launcher-*` directory; look in `backend.log` for JSON events `historical_market_data_failure` or `historical_market_data_configured_fallback`. Share the request ID and diagnostic codes, not credentials or full environment dumps. Recent failures/cooldowns are process-local; logs retain prior evidence.
+
+| Diagnostic code | Meaning / next step |
+| --- | --- |
+| `proxy_denied` / `proxy_authentication` / `proxy_error` | An outbound proxy denied CONNECT (often 403), requires authentication or failed. Check the approved proxy/allowlist settings; this is separate from Vite's localhost API proxy. |
+| `access_denied` | Provider 401/403: access policy, key or subscription/ETF coverage problem. Confirm access with that provider or explicitly configure another legitimate provider. |
+| `rate_limited` | Provider 429: wait for Retry-After. A minimum 300-second cooldown (longer when the provider supplies Retry-After) applies across 1Y/3Y/5Y, so changing ranges does not hammer the provider. |
+| `timeout` / `connection_error` / `provider_unavailable` | One bounded retry was attempted for transient network/server failure. Check connectivity, then retry later. |
+| `tls_error` | Configure your organization's trusted CA correctly; TLS verification stays enabled. |
+| `missing_api_key` | Configure TIINGO_API_KEY in the backend environment and restart. |
+| `missing_adjusted_close` / `missing_prices` / `empty_dataset` | Provider did not return usable adjusted data. Raw closes or synthetic prices will not be substituted. |
+| `invalid_prices` / `duplicate_dates` / `insufficient_history` | Invalid prices or fewer than 150 common observations after calendar alignment. Check provider coverage/date range/data plan. |
+| `cache_io_error` | Check write permissions for PORTFOLIO_MARKET_CACHE_DIR; no secret path values are included in the response. |
+
+### Use Tiingo directly when Yahoo is unavailable
+
+Tiingo is an independent legitimate End-of-Day provider, not a Yahoo mirror. Obtain an account/API key and verify that your plan permits **daily adjusted historical prices for SPY, AGG, GLD and QQQ**, sufficient history, your intended research use and request quota. Availability and pricing depend on Tiingo; no free-access guarantee is made. See [Tiingo End-of-Day documentation](https://www.tiingo.com/documentation/end-of-day). The app uses the official `https://api.tiingo.com/tiingo/daily/{symbol}/prices` endpoint and the returned **adjClose**, not raw close. Authentication is an Authorization header, never a token in a URL. Redirects are not followed with credentials.
+
+In PowerShell, from the repository root, after stopping existing services:
+
+```powershell
+$env:MARKET_DATA_PROVIDER = "tiingo"
+Remove-Item Env:MARKET_DATA_FALLBACK_PROVIDER -ErrorAction SilentlyContinue
+$secureKey = Read-Host "Tiingo API key" -AsSecureString
+$env:TIINGO_API_KEY = [System.Net.NetworkCredential]::new("", $secureKey).Password
+Remove-Variable secureKey
+.\START_PROJECT.bat
+# After quitting the launcher, optionally clear this terminal's key:
+Remove-Item Env:TIINGO_API_KEY -ErrorAction SilentlyContinue
+```
+
+Enter the key only at the hidden prompt, not in Git, chat, frontend code, VITE_* variables or a literal command saved in shell history. These settings are session-local. Launch the batch file **from this same PowerShell terminal** so its backend inherits them; a separate Explorer double-click does not inherit temporary PowerShell settings. The existing launcher is unchanged. Choose Real Historical Market Data in the GUI, then refresh. Cached data retains its actual provider and retrieval time. Stop/restart after changing provider settings; do not restart repeatedly to defeat provider rate limits.
+
+To explicitly allow Tiingo **only as a fallback** after a Yahoo failure, use the same key setup, then:
+
+```powershell
+$env:MARKET_DATA_PROVIDER = "yahoo"
+$env:MARKET_DATA_FALLBACK_PROVIDER = "tiingo"
+.\START_PROJECT.bat
+```
+
+No alternative is contacted unless configured. A fallback fetch downloads **all four ETFs from that provider**; data from different providers is never combined within one dataset. CASH remains a $1 snapshot account with separately applied assumed yield, never a requested ticker. The GUI shows the actual provider, explicit fallback flag and primary failure code. Provenance and JSON/CSV exports retain provider identity. Provider-policy cache namespaces prevent Tiingo configuration from serving a Yahoo cache. Existing model comparisons still replay their own immutable original dataset even when today's provider changes; the experiment dropdown includes its provider label. Saved models, experiments and snapshots are not rewritten.
+
+Only transient timeout/connection/server errors receive one bounded retry (0.5-second delay), unless the provider supplies Retry-After; positive provider retry hints suppress immediate retries and extend the cooldown. Access denials, TLS failures, rate limits and bad data are not immediately retried. Valid caches last six hours and refresh clicks coalesce for 60 seconds. Expired prices are not silently served on failure, and real requests never fall back to synthetic data.
+
+### Fix validation and environment boundary
+
+Backend tests cover Yahoo API compatibility/bootstrap failures, adjusted-price parsing, legitimate Tiingo request/authentication shape, positive-price/calendar checks, empty/missing prices, 401/403/429, bounded retries, rate cooldowns, provider selection/cache separation, absent keys and diagnostic redaction. Browser checks use explicit controlled fixtures; they do not establish actual provider access.
+
+This cloud's Yahoo chart and Tiingo documentation requests were denied by the outbound proxy with CONNECT 403; the modern yfinance request also failed. There is no injected TIINGO_API_KEY. **Neither provider has been successfully fetched in this environment.** The safe diagnostics can identify your Windows cause after local execution; Windows logs are not accessible from this cloud task. `api.tiingo.com` was added to the existing Yahoo host draft for environment-settings review/save and publication; a saved draft does not apply or verify access. Local Windows uses its own network and account permissions. No proxy bypass, scraping around a restriction, TLS disablement or fabricated real prices is implemented.
+
+To exercise the explicit fallback scenario without external credentials, stop existing servers and run `.venv/bin/python backend/scripts/run_market_fixture_server.py --configured-fallback-fixture`, start Vite, then run `EXPECT_CONFIGURED_FALLBACK=1 CHROMIUM_PATH=/usr/bin/chromium npm run test:real-market` from frontend on Linux. PowerShell: use the Windows venv Python and set `$env:EXPECT_CONFIGURED_FALLBACK="1"` before `npm run test:real-market` (install Playwright Chromium first). The harness explicitly labels its controlled Tiingo fixture and uses only temporary research artifacts. Production startup never enables it.

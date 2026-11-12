@@ -27,9 +27,12 @@ def prices():
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    for name in ('MARKET_DATA_PROVIDER', 'MARKET_DATA_FALLBACK_PROVIDER', 'TIINGO_API_KEY'):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(database, 'DB_PATH', tmp_path / 'portfolio.db')
     monkeypatch.setattr(service, 'CACHE_ROOT', tmp_path / 'market_cache')
     monkeypatch.setattr(service, 'failures', {})
+    monkeypatch.setattr(service, 'provider_cooldowns', {})
     monkeypatch.setattr(storage, 'ROOT', tmp_path / 'experiments')
     monkeypatch.setattr(backtests, 'ROOT', tmp_path / 'backtests')
     with TestClient(app) as client:
@@ -100,7 +103,7 @@ def test_provider_failure_is_explicit_without_fallback(client, monkeypatch, erro
     for _ in range(2):
         response = client.get('/api/market?data_source=real')
         assert response.status_code == status
-        assert response.headers['retry-after'] == '60'
+        assert response.headers['retry-after'] == ('300' if status == 429 else '60')
         assert 'No synthetic fallback' in response.json()['detail']
     assert len(calls) == 1
     assert client.get('/api/market?data_source=synthetic').status_code == 200

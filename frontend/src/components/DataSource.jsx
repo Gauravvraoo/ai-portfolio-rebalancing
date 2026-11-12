@@ -42,6 +42,7 @@ export function Provenance({ data }) {
   if (!data) return null;
   return <div className="notice"><span>
     <strong>{sourceName(data.data_source)}</strong> · {data.provider || 'Repository fixture'}
+    {data.fallback_used && <> · Explicitly configured provider fallback used ({data.primary_provider} → {data.provider_id}; {data.fallback_reason?.code})</>}
     {' · '}{data.start_date} → {data.end_date}
     {data.last_trading_date && <> · Last available trading date: {data.last_trading_date}</>}
     {data.fetched_at && <> · Retrieved: {data.fetched_at}</>}

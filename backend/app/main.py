@@ -4,7 +4,7 @@ import io
 import subprocess
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel, Field, model_validator
 from app.database import initialize, connect
 from app.services.portfolio import simulate, market
@@ -13,7 +13,8 @@ from app.backtesting.jobs import router as backtesting_router
 from app.rl import jobs as training_jobs
 from app.backtesting import jobs as backtest_jobs
 from app.rl.storage import read, write, now
-from app.market_data.service import DataSelection, dataset
+from app.market_data.service import DataSelection, dataset, configuration_diagnostics
+from app.market_data.diagnostics import MarketDataHTTPError
 from app.market_data.analysis import summarize, correlations
 import numpy as np
 
@@ -48,6 +49,15 @@ async def lifespan(app):
             manager.processes.clear()
 
 app = FastAPI(title="Verdant Portfolio Simulation", version="1.0.0", lifespan=lifespan)
+@app.exception_handler(MarketDataHTTPError)
+async def historical_data_error(request, exc):
+    return JSONResponse(status_code=exc.status_code, headers=exc.headers,
+                        content={"detail": exc.detail, "diagnostics": exc.diagnostics})
+
+@app.get("/api/market/diagnostics")
+def historical_diagnostics():
+    return configuration_diagnostics()
+
 app.include_router(training_router)
 app.include_router(backtesting_router)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])

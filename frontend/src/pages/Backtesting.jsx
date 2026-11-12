@@ -381,7 +381,7 @@ export default function Backtesting({ baseline }) {
                       </option>
                       {options?.experiments.filter(e => compatibleExperiment(e, source, range)).map((e) => (
                         <option key={e.id} value={e.id}>
-                          {e.id.slice(0, 8)} · {sourceName(e.data?.data_source)} · {e.mode} · seed {e.config.seed}
+                          {e.id.slice(0, 8)} · {e.data?.provider || "Repository fixture"} · {sourceName(e.data?.data_source)} · {e.mode} · seed {e.config.seed}
                         </option>
                       ))}
                     </select>

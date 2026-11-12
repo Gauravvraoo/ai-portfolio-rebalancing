@@ -22,7 +22,9 @@ export async function request(path, options = {}) {
       if (Array.isArray(body.detail))
         message = body.detail.map((x) => x.msg).join("; ");
     } catch { /* use status */ }
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   try {
     return await response.json();

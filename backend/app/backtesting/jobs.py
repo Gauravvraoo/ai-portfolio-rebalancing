@@ -220,6 +220,8 @@ def export(
     label = ("REAL HISTORICAL ADJUSTED PRICES" if source_of(data) == 'real' else "SYNTHETIC PRICES") + "; ILLUSTRATIVE ESG; EDUCATIONAL BACKTESTING ONLY, NOT INVESTMENT ADVICE"
     provenance = {
         'data_source': source_of(data), 'provider': data.get('provider', 'Repository fixture'),
+        'provider_id': data.get('provider_id', 'yahoo' if source_of(data) == 'real' else 'synthetic'),
+        'provider_fallback_used': data.get('fallback_used', False),
         'data_range': data.get('data_range', 'fixture'),
         'training_configuration': json.dumps(result.get('training_config'), sort_keys=True),
         'allocation_bounds': json.dumps(result.get('allocation_bounds'), sort_keys=True),

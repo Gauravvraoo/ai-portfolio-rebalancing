@@ -41,3 +41,12 @@ test('slow backend requests time out with a retry message', async () => {
     clearTimeout(keepAlive);
   }
 });
+
+test('provider diagnostics remain actionable in the GUI error without fabricated data', async () => {
+  globalThis.fetch = async () => Response.json({
+    detail: 'Historical market data unavailable: yahoo[proxy_denied] SPY. Request ID: test-request. No synthetic fallback was used.',
+    diagnostics: { request_id: 'test-request', failures: [{ provider: 'yahoo', code: 'proxy_denied', symbol: 'SPY' }] },
+  }, { status: 503 });
+  await assert.rejects(request('market?data_source=real'), error =>
+    error.status === 503 && error.message.includes('proxy_denied') && error.message.includes('test-request'));
+});
