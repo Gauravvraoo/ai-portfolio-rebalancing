@@ -26,7 +26,7 @@ export function PageHeader({
     </div>
   );
 }
-export function DataNotice({ children }) {
+export function DataNotice({ children, badge = "SYNTHETIC DATA" }) {
   return (
     <div className="notice">
       <FlaskConical size={17} />
@@ -38,7 +38,7 @@ export function DataNotice({ children }) {
           </>
         )}
       </span>
-      <span className="sample-badge">SYNTHETIC DATA</span>
+      <span className="sample-badge">{badge}</span>
     </div>
   );
 }

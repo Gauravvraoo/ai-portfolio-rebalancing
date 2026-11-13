@@ -20,7 +20,7 @@ const os = require("node:os");
   page.on("pageerror", (e) => exceptions.push(e.message));
   const routes = [
     ["/", "Your holdings"],
-    ["/market", "The complete sample universe"],
+    ["/market", "Dataset details"],
     ["/training", "Training status"],
     ["/rebalance", "Simulation results"],
     ["/comparison", "Saved backtests"],
@@ -146,7 +146,7 @@ const os = require("node:os");
   }
   await page.goto("http://127.0.0.1:5173/market");
   await page
-    .getByRole("heading", { name: "The complete sample universe" })
+    .getByRole("heading", { name: "Dataset details" })
     .waitFor();
   await page.getByLabel("Asset category").selectOption("Cash");
   await page.getByRole("button", { name: /CASH/ }).click();

@@ -25,6 +25,56 @@ const AxeBuilder = require('@axe-core/playwright').default;
     assert(market.data.fetched_at && market.data.last_trading_date);
     console.log(`Provider used for browser validation: ${market.data.provider}`);
     await page.getByRole('heading', { name: 'Daily return correlations' }).waitFor();
+    assert.equal(
+      await page.locator(".market-asset-grid .asset-card-value").count(),
+      5,
+    );
+    const chartBox = await page.locator(".market-history-chart").boundingBox();
+    assert(
+      chartBox.height >= 380 && chartBox.height <= 450,
+      "desktop performance chart height",
+    );
+    await page
+      .getByRole("heading", { name: "Historical return & volatility" })
+      .waitFor();
+    const cells = await page
+      .locator(".market-heatmap tbody td")
+      .allTextContents();
+    assert.equal(cells.length, 25);
+    assert(
+      cells.includes("N/A"),
+      "constant cash is not assigned fabricated correlation",
+    );
+    // Card values must come from the same backend response, including decimal precision.
+    const spyPrice = market.assets.find((a) => a.symbol === "SPY").price;
+    assert(
+      (await page.locator(".market-asset-grid").innerText()).includes(
+        new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(spyPrice),
+      ),
+    );
+    await page.getByText(/assumed annual yield · not a market quote/).waitFor();
+    const quickRange = page.waitForResponse(
+      (r) =>
+        r.url().includes("data_range=5Y") &&
+        r.url().includes("/api/market?") &&
+        r.status() === 200,
+    );
+    await page.getByRole("button", { name: "5Y", exact: true }).click();
+    await quickRange;
+    await page
+      .getByRole("heading", { name: "Daily return correlations" })
+      .waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "5Y", exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+    );
     const ranged = page.waitForResponse(r => r.url().includes('data_range=1Y') && r.url().includes('/api/market?') && r.status() === 200);
     await page.getByLabel('Historical date range').selectOption('1Y');
     market = await (await ranged).json();

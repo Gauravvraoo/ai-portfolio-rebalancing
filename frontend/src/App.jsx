@@ -236,7 +236,14 @@ export default function App() {
             </span>
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} ref={main}>
+        <main
+          className={
+            location.pathname === "/market" ? "market-main" : undefined
+          }
+          id="main-content"
+          tabIndex={-1}
+          ref={main}
+        >
           <div className="page-content" key={location.pathname}>
             <DataSourceControls />
             <Routes>
