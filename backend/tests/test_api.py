@@ -62,3 +62,10 @@ def test_market_strategies_and_report(client):
     assert len(rows) == 15
     assert float(rows[-1][1]) == round(strategies[0]['value'],2)
     assert 'attachment' in response.headers['content-disposition']
+
+
+def test_historical_market_has_no_streaming_endpoint(client):
+    # Checking the registered paths catches WebSocket routes as well as HTTP routes.
+    assert all(getattr(route, 'path', None) != '/api/market/stream' for route in app.routes)
+    assert client.get('/api/market/stream').status_code == 404
+    assert client.get('/api/market').json()['data']['data_source'] == 'synthetic'

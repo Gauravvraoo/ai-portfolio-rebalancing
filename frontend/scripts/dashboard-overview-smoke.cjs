@@ -9,6 +9,8 @@ const assert = require('node:assert/strict');
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     const errors = [];
+    const marketSockets = [];
+    page.on('websocket', socket => { if (new URL(socket.url()).pathname.startsWith('/api/')) marketSockets.push(socket.url()); });
     page.on('pageerror', error => errors.push(error.message));
     let kpis;
     for (const source of ['synthetic', 'real']) {
@@ -72,7 +74,8 @@ const assert = require('node:assert/strict');
       }
       await page.setViewportSize({ width: 1440, height: 1000 });
     }
+    assert.deepEqual(marketSockets, [], 'Historical analysis must never open market-data WebSockets');
     assert.deepEqual(errors, []);
-    console.log('PASS: Dashboard heading → six unchanged KPIs, original buttons/charts/period control, no historical panel/controls/requests in both sources; Market panel/charts retained; global header scoped to Market; research form selectors retained; 16 responsive accessibility audits');
+    console.log('PASS: Dashboard heading → six unchanged KPIs, original buttons/charts/period control, no historical panel/controls/requests in both sources; Market panel/charts retained; global header scoped to Market; research form selectors retained; 16 responsive accessibility audits; no market-data WebSockets');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

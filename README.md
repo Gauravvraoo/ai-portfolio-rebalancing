@@ -4,6 +4,10 @@ Phases 1–5 of a B.Tech CSE final-year project: an educational portfolio simula
 
 **No live trading, streaming quotes or verified vendor ESG ratings.** Synthetic Demo remains the default. Optional **Real Historical Market Data** downloads split/dividend-adjusted daily ETF closes from Yahoo Finance via yfinance. Prices are historical observations, never advertised as live. PPO uses genuine Gymnasium/Stable-Baselines3 models; research results do not establish future investment performance.
 
+Market Analysis uses historical datasets only; there is no live ETF watch or streaming market-data connection. Its data-source controls stay on Market Analysis. Training and Strategy Comparison retain source/range selectors inside their own configuration forms. The shared **API connected** indicator reports FastAPI/SQLite health, not market-provider connectivity.
+
+See [Historical Market Analysis](docs/historical-market-analysis.md) for the current data flow and verification steps.
+
 ## Requirements
 
 - Python 3.11–3.12 (verified with Python 3.12; use a version supported by the pinned PyTorch wheels)

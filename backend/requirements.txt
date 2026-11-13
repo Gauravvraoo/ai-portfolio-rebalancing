@@ -9,6 +9,3 @@ stable-baselines3==2.6.0
 torch==2.6.0
 scipy==1.15.3
 yfinance==1.8.0
-
-# Alpaca read-only WebSocket transport (JSON protocol, proxy/TLS verification enabled).
-websockets==17.4
