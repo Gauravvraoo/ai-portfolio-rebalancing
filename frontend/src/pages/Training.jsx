@@ -15,6 +15,7 @@ import { request } from "../api";
 import { Panel, PerformanceChart, money, pct } from "../components/UI";
 import { useDataSource, Provenance } from "../components/DataSource";
 import { sourceName } from "../lib/dataSource";
+import ResearchDatasetFields from "../components/ResearchDatasetFields";
 const symbols = ["SPY", "AGG", "GLD", "QQQ", "CASH"];
 const names = { profit: "Profit PPO", responsible: "Responsible PPO" };
 const active = new Set(["queued", "running", "evaluating"]);
@@ -205,6 +206,7 @@ export default function Training() {
               start();
             }}
           >
+            <ResearchDatasetFields purpose="Training" />
             <label className="config-field">
               Training mode
               <select

@@ -21,6 +21,7 @@ import { request } from "../api";
 import { Panel, money } from "../components/UI";
 import { useDataSource, Provenance } from "../components/DataSource";
 import { compatibleExperiment, sourceName } from "../lib/dataSource";
+import ResearchDatasetFields from "../components/ResearchDatasetFields";
 const palette = [
   "#648cff",
   "#39c8bc",
@@ -370,6 +371,7 @@ export default function Backtesting({ baseline }) {
                 }
               >
                 <form onSubmit={run} className="backtest-form">
+                  <ResearchDatasetFields purpose="Backtest" />
                   <label className="config-field model-field">
                     PPO experiment
                     <select

@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 (async () => {
   const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
   try {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -49,13 +49,30 @@ const assert = require('node:assert/strict');
       assert.equal(await page.getByRole('button', { name: '3M', exact: true }).getAttribute('aria-pressed'), 'true');
       assert.equal(await page.locator('.dashboard-kpis').innerText(), kpis);
     }
-    // Shared rendering change must leave all non-Dashboard controls available.
+    // Only Market Analysis mounts the global header. Research forms keep scoped inputs.
     for (const route of ['/market', '/training', '/rebalance', '/comparison', '/reports']) {
       await page.goto(`http://127.0.0.1:5173${route}`);
-      await page.getByLabel('Data source', { exact: true }).waitFor();
-      assert.equal(await page.locator('.source-controls').count(), 1);
+      await page.locator('.page-title').waitFor();
+      assert.equal(await page.locator('.source-controls').count(), route === '/market' ? 1 : 0);
+      if (route === '/training') await page.getByLabel('Training data source', { exact: true }).waitFor();
+      if (route === '/comparison') await page.getByLabel('Backtest data source', { exact: true }).waitFor();
+      if (!['/market','/comparison'].includes(route)) assert(await page.locator('.page-title').evaluate(el => el === document.querySelector('.page-content').firstElementChild));
+      if (['/training','/comparison'].includes(route)) {
+        const label = route === '/training' ? 'Training' : 'Backtest';
+        assert.equal(await page.getByLabel(`${label} data source`, { exact: true }).inputValue(), 'real');
+        await page.getByLabel(`${label} historical range`, { exact: true }).selectOption('1Y');
+        assert.equal(await page.getByLabel(`${label} historical range`, { exact: true }).inputValue(), '1Y');
+        assert(await page.getByLabel(`${label} data source`, { exact: true }).evaluate(el => Boolean(el.closest('form'))));
+      }
+      for (const width of [1440,390]) {
+        await page.setViewportSize({ width, height: 1000 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        const audit = await new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze();
+        assert.deepEqual(audit.violations.map(v => v.id), [], `${route}/${width}: ${JSON.stringify(audit.violations.map(v => v.nodes.map(n => n.failureSummary)))}`);
+      }
+      await page.setViewportSize({ width: 1440, height: 1000 });
     }
     assert.deepEqual(errors, []);
-    console.log('PASS: Dashboard heading → six unchanged KPIs, original buttons/charts/period control, no historical panel/controls/requests in both sources; Market panel/charts retained; other route controls retained; six responsive accessibility audits');
+    console.log('PASS: Dashboard heading → six unchanged KPIs, original buttons/charts/period control, no historical panel/controls/requests in both sources; Market panel/charts retained; global header scoped to Market; research form selectors retained; 16 responsive accessibility audits');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
