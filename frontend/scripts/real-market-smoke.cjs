@@ -126,7 +126,9 @@ const AxeBuilder = require('@axe-core/playwright').default;
     await page.getByLabel('Data source', { exact: true }).selectOption('real');
     // Real mode must preserve distinct labeled baseline metrics and saved reports.
     await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
-    await page.getByRole('heading', { name: 'Active historical market dataset' }).waitFor();
+    await page.getByRole('heading', { name: 'Portfolio overview', exact: true }).waitFor();
+    assert.equal(await page.locator('.source-controls').count(), 0);
+    assert.equal(await page.getByRole('heading', { name: 'Active historical market dataset' }).count(), 0);
     await page.getByText('Baseline simulation', { exact: true }).waitFor();
     await page.getByRole('link', { name: 'Reports', exact: true }).click();
     await page.getByLabel('Backtest to export').selectOption(run.id);

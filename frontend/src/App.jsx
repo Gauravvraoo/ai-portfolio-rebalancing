@@ -245,7 +245,7 @@ export default function App() {
           ref={main}
         >
           <div className="page-content" key={location.pathname}>
-            <DataSourceControls />
+            {location.pathname !== "/" && <DataSourceControls />}
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/market" element={<Market />} />
