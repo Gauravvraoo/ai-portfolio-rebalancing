@@ -4,10 +4,11 @@ import {
   CorrelationHeatmap,
 } from "../components/MarketCharts";
 import { useState } from "react";
+import MarketDatasetInfo from "./MarketDatasetInfo";
 import { Leaf, RefreshCw, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApi } from "../api";
-import { useDataSource, Provenance } from "../components/DataSource";
+import { useDataSource } from "../components/DataSource";
 import { marketPath, sourceName } from "../lib/dataSource";
 import { Panel, State, colors, pct } from "../components/UI";
 import { PageHeader, DataNotice, EmptyState } from "../components/Design";
@@ -104,7 +105,7 @@ export default function Market() {
             .map((a) => a.symbol);
           return (
             <>
-              <Provenance data={d.data} />
+              <MarketDatasetInfo dataset={d} />
               <div className="section-heading">
                 <div>
                   <div className="eyebrow">KNOW YOUR EXPOSURE</div>

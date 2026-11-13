@@ -1,0 +1,185 @@
+.panel {
+  padding: 16px 22px;
+  border: 1px solid #385175;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at top left, #294b793d, transparent 65%),
+    linear-gradient(115deg, #152640, #101c30 80%);
+  box-shadow: 0 10px 28px #02081720;
+  color: #edf3ff;
+  min-width: 0;
+}
+.header,
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header {
+  justify-content: space-between;
+  gap: 16px;
+}
+.emblem {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  color: #afcaff;
+  background: #527ab426;
+  border: 1px solid #5e82bb66;
+  border-radius: 11px;
+}
+.eyebrow {
+  color: #a6bfdf;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+}
+.heading h2 {
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  margin: 4px 0 0;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid #52709b66;
+  background: #142b474d;
+  border-radius: 20px;
+  color: #c5d9f6;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.badge svg {
+  flex-shrink: 0;
+  color: #9abbea;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+.detail {
+  min-width: 0;
+  padding: 10px 14px;
+  background: #09162766;
+  border: 1px solid #4760804d;
+  border-radius: 10px;
+}
+.label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #a8bddb;
+  line-height: 1.4;
+}
+.label svg {
+  color: #8eafe4;
+  flex-shrink: 0;
+}
+.detail > strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 1.45;
+  color: #eef4ff;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.detail > small {
+  display: block;
+  margin-top: 3px;
+  color: #9fb3cf;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.unit {
+  font-weight: 400;
+  font-size: 12px;
+  color: #aebfd9;
+}
+.symbols {
+  margin-left: 12px;
+  color: #bacfee;
+  font-size: 13px;
+  font-weight: 400;
+}
+.dateArrow {
+  color: #8daacf;
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-top: 10px;
+  border-top: 1px solid #3e587b66;
+  color: #b3c4dc;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.provenance {
+  margin-top: 8px;
+  color: #aabedb;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.provenance summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.provenance p {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1180px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 720px) {
+  .panel {
+    padding: 18px;
+  }
+  .heading h2 {
+    font-size: 20px;
+  }
+  .grid {
+    gap: 9px;
+  }
+  .detail {
+    padding: 12px;
+  }
+  .detail > strong {
+    font-size: 15px;
+  }
+  .symbols {
+    display: block;
+    margin-left: 0;
+    margin-top: 3px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 420px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fallback {
+  margin: 6px 0 0;
+  color: #d4c49b;
+  font-size: 11px;
+  line-height: 1.6;
+}
