@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: { "/api": { target: apiTarget, changeOrigin: true } },
+    proxy: { "/api": { target: apiTarget, changeOrigin: true, ws: true } },
   },
-  preview: { proxy: { "/api": { target: apiTarget, changeOrigin: true } } },
+  preview: { proxy: { "/api": { target: apiTarget, changeOrigin: true, ws: true } } },
 });

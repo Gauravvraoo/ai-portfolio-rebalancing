@@ -16,6 +16,7 @@ from app.rl.storage import read, write, now
 from app.market_data.service import DataSelection, dataset, configuration_diagnostics
 from app.market_data.diagnostics import MarketDataHTTPError
 from app.market_data.analysis import summarize, correlations
+from app.market_stream.alpaca import router as stream_router, hub as stream_hub
 import numpy as np
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ async def lifespan(app):
     try:
         yield
     finally:
+        await stream_hub.close()
         for manager in (training_jobs, backtest_jobs):
             for proc in manager.processes.values():
                 if proc.poll() is None:
@@ -58,6 +60,7 @@ async def historical_data_error(request, exc):
 def historical_diagnostics():
     return configuration_diagnostics()
 
+app.include_router(stream_router)
 app.include_router(training_router)
 app.include_router(backtesting_router)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])

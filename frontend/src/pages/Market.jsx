@@ -5,6 +5,7 @@ import {
 } from "../components/MarketCharts";
 import { useState } from "react";
 import MarketDatasetInfo from "./MarketDatasetInfo";
+import MarketWatch from "./MarketWatch";
 import { Leaf, RefreshCw, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useApi } from "../api";
@@ -88,6 +89,12 @@ export default function Market() {
           returns. Provider requests can take a moment.
         </p>
       )}
+      {!resource.loading &&
+        !resource.error &&
+        resource.data?.history?.length > 0 && (
+          <MarketDatasetInfo dataset={resource.data} />
+        )}
+      <MarketWatch />
       <State resource={resource}>
         {(d) => {
           if (!d.history?.length)
@@ -105,7 +112,6 @@ export default function Market() {
             .map((a) => a.symbol);
           return (
             <>
-              <MarketDatasetInfo dataset={d} />
               <div className="section-heading">
                 <div>
                   <div className="eyebrow">KNOW YOUR EXPOSURE</div>
