@@ -1,3 +1,4 @@
+import { apiUrl } from "./lib/apiUrl.js";
 import { useCallback, useEffect, useState } from "react";
 export async function request(path, options = {}) {
   const { timeoutMs = 15000, ...fetchOptions } = options;
@@ -7,7 +8,7 @@ export async function request(path, options = {}) {
     : timeout;
   let response;
   try {
-    response = await fetch(`/api/${path}`, { ...fetchOptions, signal });
+    response = await fetch(apiUrl(path), { ...fetchOptions, signal });
   } catch (error) {
     if (options.signal?.aborted) throw error;
     if (timeout.aborted)

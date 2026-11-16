@@ -1,3 +1,4 @@
+import { apiUrl } from "../lib/apiUrl.js";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHeader, WorkspaceSteps } from "../components/Design";
@@ -264,7 +265,7 @@ export default function Backtesting({ baseline }) {
     setError("");
     try {
       const response = await fetch(
-        `/api/backtests/${job.id}/export?format=${format}&kind=${kind}`,
+        apiUrl(`backtests/${job.id}/export?format=${format}&kind=${kind}`),
       );
       if (!response.ok)
         throw Error(`Export failed (${response.status}). Please retry.`);

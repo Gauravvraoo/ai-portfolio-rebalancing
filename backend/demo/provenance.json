@@ -1,0 +1,7 @@
+{
+  "label": "Precomputed synthetic sample; not a live hosted training run",
+  "command": "python scripts/build_public_demo.py (from backend)",
+  "seed": 7,
+  "timesteps_per_agent": 512,
+  "notes": "Genuine local CPU PPO optimization, held-out evaluation and six-strategy replay. Illustrative ESG; no investment-performance claim."
+}

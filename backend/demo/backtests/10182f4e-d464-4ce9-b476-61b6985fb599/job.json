@@ -1,0 +1,101 @@
+{
+  "id": "10182f4e-d464-4ce9-b476-61b6985fb599",
+  "status": "completed",
+  "created_at": "2026-11-16T15:01:24.206905+00:00",
+  "updated_at": "2026-11-16T15:01:28.182725+00:00",
+  "config": {
+    "data_source": "synthetic",
+    "data_range": "3Y",
+    "experiment_id": "5f4d279d-404b-41d4-94e4-c2674bc28f25",
+    "initial_capital": 100000.0,
+    "rebalance_frequency": "weekly",
+    "fee_bps": 10.0,
+    "slippage_bps": 5.0,
+    "cash_annual_return": 0.02,
+    "risk_free_rate": 0.0,
+    "min_esg": 65.0,
+    "apply_esg_to_all": false,
+    "lookback": 60,
+    "risk_aversion": 5.0,
+    "start_date": null,
+    "end_date": null
+  },
+  "training_config": {
+    "data_source": "synthetic",
+    "data_range": "3Y",
+    "mode": "quick",
+    "seed": 7,
+    "fee_bps": 10,
+    "slippage_bps": 5,
+    "cash_annual_return": 0.02,
+    "min_esg": 65,
+    "min_weights": [
+      0,
+      0,
+      0,
+      0,
+      0.02
+    ],
+    "max_weights": [
+      0.6,
+      0.6,
+      0.6,
+      0.6,
+      0.6
+    ],
+    "risk_penalty": 0.5,
+    "drawdown_penalty": 0.1,
+    "cost_penalty": 1,
+    "esg_penalty": 0.5
+  },
+  "data": {
+    "data_source": "synthetic",
+    "provider": "Repository seeded daily fixture",
+    "data_range": "fixture",
+    "price_adjustment": "Synthetic prices; no corporate actions",
+    "start_date": "2022-01-03",
+    "end_date": "2024-12-27",
+    "cash_assumption": "CASH is an account, not a ticker. Snapshot price is 1; configured annual yield accrues at 252 observed transitions/year in execution.",
+    "label": "Seeded synthetic daily prices, not real historical quotes; illustrative ESG assumptions",
+    "sha256": "713844fdf6689e4aea284cca0d5ceaf79af1e56f90670dacca321115e683d27d",
+    "observations": 780,
+    "symbols": [
+      "SPY",
+      "AGG",
+      "GLD",
+      "QQQ",
+      "CASH"
+    ],
+    "esg": [
+      68.0,
+      73.0,
+      45.0,
+      64.0,
+      50.0
+    ],
+    "splits": {
+      "train": {
+        "decision_start": "2022-01-31",
+        "first_return_end": "2022-02-01",
+        "last_return_end": "2023-10-30",
+        "transitions": 455
+      },
+      "validation": {
+        "decision_start": "2023-10-30",
+        "first_return_end": "2023-10-31",
+        "last_return_end": "2024-05-29",
+        "transitions": 152
+      },
+      "test": {
+        "decision_start": "2024-05-29",
+        "first_return_end": "2024-05-30",
+        "last_return_end": "2024-12-27",
+        "transitions": 152
+      }
+    }
+  },
+  "model_sha256": {
+    "profit": "078705bdd2152ebbc1eedf4ab842f83ccb69aa3b88572d319183e9d22ca0b508",
+    "responsible": "e65ef0993f07ba894b96a2ba737489eabab2b41168aae23afba612a9bcda48b2"
+  }
+}

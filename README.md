@@ -8,6 +8,9 @@ Market Analysis uses historical datasets only; there is no live ETF watch or str
 
 See [Historical Market Analysis](docs/historical-market-analysis.md) for the current data flow and verification steps.
 
+Public deployment on Vercel + Render Free: see [DEPLOYMENT.md](DEPLOYMENT.md).
+Local startup stays unchanged; hosted deployment uses labeled precomputed samples.
+
 ## Requirements
 
 - Python 3.11–3.12 (verified with Python 3.12; use a version supported by the pinned PyTorch wheels)

@@ -1,3 +1,4 @@
+import { apiUrl } from "./apiUrl.js";
 /** Zero-risk-free Sharpe calculated from the API's cent-rounded monthly observations. */
 export function monthlySharpe(history) {
   if (
@@ -34,7 +35,7 @@ export function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export async function downloadApi(path, filename) {
-  const response = await fetch(`/api/${path}`);
+  const response = await fetch(apiUrl(path));
   if (!response.ok)
     throw Error(`Download failed (${response.status}). Please retry.`);
   downloadBlob(await response.blob(), filename);

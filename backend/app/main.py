@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 import csv
 import io
 import subprocess
@@ -21,6 +22,12 @@ import numpy as np
 @asynccontextmanager
 async def lifespan(app):
     initialize()
+    if os.getenv("PUBLIC_DEMO_MODE") == "1":
+        # Read committed, genuinely computed samples; never overwrite local artifacts.
+        from pathlib import Path
+        samples = Path(__file__).resolve().parents[1] / "demo"
+        training_jobs.storage.ROOT = samples / "experiments"
+        backtest_jobs.ROOT = samples / "backtests"
     # Processes are not restored with saved artifacts. Under the documented
     # single-API-worker model, unfinished jobs from a previous API lifetime
     # must not permanently block new work or appear to keep progressing.
@@ -60,7 +67,27 @@ def historical_diagnostics():
 
 app.include_router(training_router)
 app.include_router(backtesting_router)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+@app.middleware("http")
+async def public_demo_guard(request, call_next):
+    if os.getenv("PUBLIC_DEMO_MODE") == "1":
+        path = request.url.path.rstrip("/")
+        if request.method == "POST" and (
+            path == "/api/backtests" or path.startswith("/api/training/")
+        ):
+            return JSONResponse(status_code=403, content={"detail":
+                "Public demo: precomputed synthetic sample results only. "
+                "Run locally for real PPO training, evaluation and new backtests."})
+    return await call_next(request)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",") if origin.strip()],
+    allow_methods=["GET", "POST"], allow_headers=["Content-Type"],
+)
+
 
 class Allocation(BaseModel):
     weights: dict[str, float] = Field(description="Long-only weights summing to 1")
@@ -79,7 +106,7 @@ class Allocation(BaseModel):
 def health():
     with connect() as db:
         db.execute("SELECT 1").fetchone()
-    return {"status": "ok", "database": "connected", "mode": "educational simulation"}
+    return {"status": "ok", "database": "connected", "mode": "educational simulation", "public_demo": os.getenv("PUBLIC_DEMO_MODE") == "1"}
 
 @app.get("/api/portfolio")
 def portfolio():

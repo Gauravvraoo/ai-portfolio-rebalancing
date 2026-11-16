@@ -164,14 +164,14 @@ export default function App() {
               <br />
               starts with an experiment.
             </h3>
-            <p>Train. Compare. Understand.</p>
+            <p>{health.data?.public_demo ? "Precomputed synthetic samples. Train and run new backtests locally; hosted storage is temporary." : "Train. Compare. Understand."}</p>
             <Link to="/training" onClick={() => setOpen(false)}>
               Open the AI lab <ArrowUpRight size={14} />
             </Link>
           </div>
           <div className="environment-label">
             <i />
-            LOCAL RESEARCH ENVIRONMENT
+            {health.data?.public_demo ? "PUBLIC SAMPLE DEMO" : "LOCAL RESEARCH ENVIRONMENT"}
           </div>
           <div className="profile">
             <span>VP</span>
